@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Leva, useControls } from 'leva'
-import { Stage, CameraRig, useInputMode, setInputMode, toggleInputMode } from '@o3s/lib'
+import {
+  Stage,
+  CameraRig,
+  useInputMode,
+  setInputMode,
+  toggleInputMode,
+  setScrollOverride,
+} from '@o3s/lib'
 import { registry, type Family } from './gallery/registry'
 import { levaTheme } from './gallery/levaTheme'
 
@@ -33,8 +40,45 @@ export default function App() {
 
   const mode = useInputMode()
 
-  // Keyboard shortcut: hold Space (or press V) to flip to View, release to Interact.
+  // ScrollScene effects are driven by scroll progress, not the cursor — so the
+  // Interact/View toggle is meaningless for them. Instead we visualise their
+  // scroll range with a slider + auto-play that drives the scroll override.
+  const isScrollFamily = active.family === 'ScrollScene'
+  const [scroll, setScroll] = useState(0)
+  const [autoPlay, setAutoPlay] = useState(true)
+  const rafRef = useRef(0)
+
+  // Apply / clear the scroll override based on the active family.
   useEffect(() => {
+    if (isScrollFamily) setScrollOverride(scroll)
+    else setScrollOverride(null)
+    return () => setScrollOverride(null)
+  }, [isScrollFamily, scroll])
+
+  // Auto-play loop: sweep scroll 0→1→0 so the scroll behaviour plays on its own.
+  useEffect(() => {
+    if (!isScrollFamily || !autoPlay) return
+    let dir = 1
+    let last = performance.now()
+    const tick = (now: number) => {
+      const dt = (now - last) / 1000
+      last = now
+      setScroll((s) => {
+        let next = s + dir * dt * 0.25 // ~4s per full sweep
+        if (next >= 1) { next = 1; dir = -1 }
+        else if (next <= 0) { next = 0; dir = 1 }
+        return next
+      })
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [isScrollFamily, autoPlay])
+
+  // Keyboard shortcut: hold Space (or press V) to flip to View, release to Interact.
+  // (Disabled for ScrollScene effects — camera modes don't apply there.)
+  useEffect(() => {
+    if (isScrollFamily) return
     const down = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !e.repeat) {
         e.preventDefault()
@@ -52,7 +96,7 @@ export default function App() {
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
     }
-  }, [])
+  }, [isScrollFamily])
 
   return (
     <div className="app">
@@ -108,22 +152,48 @@ export default function App() {
         <p>{active.description}</p>
       </header>
 
-      {/* Mode toggle — camera vs. effect input. Present on every effect. */}
-      <div className="mode-toggle glass" role="group" aria-label="Input mode">
-        <button
-          className={mode === 'interact' ? 'mode active' : 'mode'}
-          onClick={() => setInputMode('interact')}
-        >
-          Interact
-        </button>
-        <button
-          className={mode === 'view' ? 'mode active' : 'mode'}
-          onClick={() => setInputMode('view')}
-        >
-          View
-        </button>
-        <span className="hint">hold Space to orbit</span>
-      </div>
+      {/* Bottom control bar. ScrollScene effects get a scroll visualiser
+          (slider + auto-play); everything else gets the camera Interact/View
+          toggle. The two concerns never share a control. */}
+      {isScrollFamily ? (
+        <div className="mode-toggle glass scroll-sim" role="group" aria-label="Scroll">
+          <button
+            className={autoPlay ? 'mode active' : 'mode'}
+            onClick={() => setAutoPlay((p) => !p)}
+          >
+            {autoPlay ? 'Pause' : 'Play'}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.001}
+            value={scroll}
+            onChange={(e) => {
+              setAutoPlay(false)
+              setScroll(parseFloat(e.target.value))
+            }}
+            aria-label="Scroll progress"
+          />
+          <span className="hint">scroll {Math.round(scroll * 100)}%</span>
+        </div>
+      ) : (
+        <div className="mode-toggle glass" role="group" aria-label="Input mode">
+          <button
+            className={mode === 'interact' ? 'mode active' : 'mode'}
+            onClick={() => setInputMode('interact')}
+          >
+            Interact
+          </button>
+          <button
+            className={mode === 'view' ? 'mode active' : 'mode'}
+            onClick={() => setInputMode('view')}
+          >
+            View
+          </button>
+          <span className="hint">hold Space to orbit</span>
+        </div>
+      )}
 
       {/* leva, themed to match the glass */}
       <Leva theme={levaTheme} titleBar={{ title: 'Controls' }} />

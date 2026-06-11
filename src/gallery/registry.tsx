@@ -15,6 +15,7 @@ import {
   type SurfaceMaterial,
 } from '@o3s/lib'
 import { geometryGroup, materialGroup, transformGroup } from './controls'
+import { generatedEntries } from './generatedEntries'
 
 /**
  * The gallery registry (Layer 4).
@@ -252,4 +253,7 @@ export const registry: GalleryEntry[] = [
       />
     ),
   },
+
+  // ── All workflow-authored effects (40) appended here. ──
+  ...generatedEntries,
 ]

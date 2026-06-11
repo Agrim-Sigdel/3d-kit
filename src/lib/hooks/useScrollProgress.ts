@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { getScrollOverride } from '../engine/scrollDriver'
 
 /**
  * useScrollProgress — page scroll as a 0..1 ref (DOM side, no R3F dependency).
@@ -7,7 +8,9 @@ import { useEffect, useRef } from 'react'
  * A GAME would instead drive the same components from game state. The
  * component itself doesn't care which — that's the layered design.
  *
- * Returns a ref (not state) so reading it in a useFrame loop is free.
+ * If a scroll OVERRIDE is set (see engine/scrollDriver), it wins over real page
+ * scroll — this is how the gallery visualises scroll-driven effects without an
+ * actual scrollable page. Returns a ref (reading it in useFrame is free).
  */
 export function useScrollProgress() {
   const progress = useRef(0)
@@ -20,9 +23,15 @@ export function useScrollProgress() {
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', onScroll)
+    // Poll the override each frame-ish; cheap and avoids a per-component subscription.
+    const id = window.setInterval(() => {
+      const o = getScrollOverride()
+      if (o !== null) progress.current = o
+    }, 16)
     return () => {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
+      window.clearInterval(id)
     }
   }, [])
 

@@ -307,6 +307,34 @@ body,
   letter-spacing: 0.3px;
 }
 
+/* Scroll visualiser slider */
+.scroll-sim {
+  min-width: 320px;
+}
+.scroll-sim input[type='range'] {
+  flex: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--glass-border);
+  outline: none;
+  margin: 0 4px;
+}
+.scroll-sim input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 99px;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(95, 168, 255, 0.6);
+}
+.scroll-sim .hint {
+  min-width: 78px;
+  text-align: right;
+}
+
 /* ── Responsive ────────────────────────────────────────────────── */
 
 @media (max-width: 720px) {
