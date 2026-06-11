@@ -91,7 +91,7 @@ body,
 
 .sidebar {
   position: absolute;
-  z-index: 10;
+  z-index: 30;
   top: 20px;
   left: 20px;
   bottom: 20px;
@@ -99,6 +99,56 @@ body,
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Mobile nav: hamburger + scrim (hidden on desktop) ─────────── */
+.nav-toggle {
+  display: none;
+  position: absolute;
+  z-index: 40;
+  top: 20px;
+  left: 20px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  cursor: pointer;
+}
+.burger,
+.burger::before,
+.burger::after {
+  content: '';
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text);
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+.burger::before {
+  transform: translateY(-6px);
+}
+.burger::after {
+  transform: translateY(4px);
+}
+.burger.open {
+  background: transparent;
+}
+.burger.open::before {
+  transform: translateY(0) rotate(45deg);
+}
+.burger.open::after {
+  transform: translateY(-2px) rotate(-45deg);
+}
+.nav-scrim {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(4, 5, 12, 0.5);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
 
 .brand {
@@ -122,6 +172,70 @@ body,
   font-size: 12px;
   color: var(--muted);
   letter-spacing: 0.5px;
+}
+
+/* ── Sidebar search ────────────────────────────────────────────── */
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 12px 2px 4px;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.search input {
+  width: 100%;
+  background: var(--glass-highlight);
+  border: 1px solid var(--glass-border);
+  border-radius: 11px;
+  color: var(--text);
+  font-size: 13px;
+  padding: 9px 30px 9px 32px;
+  outline: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.search input::placeholder {
+  color: var(--muted);
+}
+.search input:focus {
+  border-color: rgba(95, 168, 255, 0.5);
+  background: var(--accent-soft);
+}
+/* Hide the native search clear so our themed one is the only affordance. */
+.search input[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-clear {
+  position: absolute;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 99px;
+}
+.search-clear:hover {
+  color: var(--text);
+}
+.nav-empty {
+  margin: 24px 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
 }
 
 .nav {
@@ -238,6 +352,32 @@ body,
   line-height: 1.45;
   color: var(--muted);
 }
+.config-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.config-error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #ff6b6b;
+}
+.copy-config {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid rgba(95, 168, 255, 0.3);
+  padding: 6px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.copy-config:hover {
+  background: var(--accent);
+  color: #fff;
+}
 
 /* Difficulty badges + nav dots */
 .chip.diff {
@@ -346,15 +486,88 @@ body,
 
 /* ── Responsive ────────────────────────────────────────────────── */
 
-@media (max-width: 720px) {
+/* Tablet: narrow the sidebar and let the header share the row beside it. */
+@media (max-width: 980px) {
   .sidebar {
-    width: 200px;
+    width: 216px;
   }
   .preview-header {
-    left: 20px;
+    left: 252px;
     right: 20px;
-    top: auto;
-    bottom: 20px;
     max-width: none;
+  }
+}
+
+/* Phone / small tablet: sidebar becomes an off-canvas drawer behind a
+   hamburger; header drops to a full-width band; mode-toggle and leva get
+   out of each other's way. The 3D <Stage> stays full-bleed and fluid. */
+@media (max-width: 720px) {
+  .nav-toggle {
+    display: grid;
+  }
+  /* Off-canvas: slide the drawer fully off the left edge until opened. */
+  .sidebar {
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(82vw, 300px);
+    border-radius: 0 var(--glass-radius) var(--glass-radius) 0;
+    transform: translateX(-104%);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.6);
+  }
+  .sidebar.open ~ .nav-scrim,
+  .nav-scrim {
+    display: block;
+  }
+
+  /* Header: full-width band at the top, clearing the hamburger on the left. */
+  .preview-header {
+    top: 14px;
+    left: 76px;
+    right: 14px;
+    bottom: auto;
+    max-width: none;
+    padding: 12px 16px;
+  }
+  .preview-header h2 {
+    font-size: 17px;
+  }
+  /* Keep the description to two lines so the band stays compact. */
+  .preview-header p {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Mode toggle / scroll sim: full-width pinned to the bottom. */
+  .mode-toggle {
+    left: 14px;
+    right: 14px;
+    transform: none;
+    justify-content: center;
+    bottom: 14px;
+  }
+  .mode-toggle .hint {
+    display: none;
+  }
+  .scroll-sim {
+    min-width: 0;
+  }
+  .scroll-sim .hint {
+    display: block;
+  }
+}
+
+/* Very small: stack config actions and shrink the header band further. */
+@media (max-width: 420px) {
+  .config-actions {
+    flex-wrap: wrap;
+  }
+  .preview-header p {
+    -webkit-line-clamp: 1;
   }
 }

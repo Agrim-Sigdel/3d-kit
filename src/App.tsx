@@ -10,6 +10,7 @@ import {
   setScrollOverride,
 } from '@o3s/lib'
 import { registry, type Family } from './gallery/registry'
+import { toO3SConfig } from './gallery/O3SElement'
 import { levaTheme } from './gallery/levaTheme'
 
 /**
@@ -24,9 +25,42 @@ export default function App() {
   const [activeId, setActiveId] = useState(registry[0].id)
   const active = registry.find((e) => e.id === activeId) ?? registry[0]
 
+  // Sidebar search — filter the component list by name / description / family /
+  // difficulty. Case-insensitive, whitespace-trimmed.
+  const [query, setQuery] = useState('')
+  const q = query.trim().toLowerCase()
+  const matches = (e: (typeof registry)[number]) =>
+    !q ||
+    e.name.toLowerCase().includes(q) ||
+    e.description.toLowerCase().includes(q) ||
+    e.family.toLowerCase().includes(q) ||
+    e.difficulty.includes(q)
+  const filtered = registry.filter(matches)
+
+  // Mobile: the sidebar is an off-canvas drawer toggled by a hamburger.
+  const [navOpen, setNavOpen] = useState(false)
+
+  // On phones the leva panel would cover the header band, so collapse it by
+  // default there. Tracks the breakpoint live so a rotate/resize re-applies.
+  const [isCompact, setIsCompact] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 720px)')
+    const onChange = () => setIsCompact(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
   // Drive the selected component's props from a live leva panel.
-  // Keyed by id so switching components rebuilds the panel.
-  const values = useControls(active.name, active.controls as never, [active.id])
+  // Keyed by id so switching components rebuilds the panel. The function-form
+  // schema (() => controls) makes useControls return a [values, set] tuple, so
+  // Import can push a loaded config back into the live panel.
+  const [values, setValues] = useControls(
+    active.name,
+    () => active.controls as never,
+    [active.id],
+  )
 
   // Canonical 6-family order; only show families that have entries.
   const FAMILY_ORDER: Family[] = [
@@ -37,9 +71,69 @@ export default function App() {
     'ScrollScene',
     'PostFX',
   ]
-  const families = FAMILY_ORDER.filter((f) => registry.some((e) => e.family === f))
+  const families = FAMILY_ORDER.filter((f) => filtered.some((e) => e.family === f))
 
   const mode = useInputMode()
+
+  // "Copy config" — serialize the active effect's live leva values into a
+  // portable O3SConfig JSON blob and write it to the clipboard. Paste it into
+  // a site's content file, or straight into <O3SElement config={...} />.
+  const [copied, setCopied] = useState(false)
+  const copyConfig = async () => {
+    const config = toO3SConfig(active.id, values as Record<string, unknown>)
+    const json = JSON.stringify(config, null, 2)
+    try {
+      await navigator.clipboard.writeText(json)
+    } catch {
+      // Clipboard API blocked (insecure context / permissions) — fall back to
+      // logging so the config is still recoverable.
+      console.log(json)
+    }
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1500)
+  }
+
+  // "Export" — download the active effect's config as a .json file, named by
+  // effect id. Same O3SConfig shape as Copy, just a file instead of clipboard.
+  const exportConfig = () => {
+    const config = toO3SConfig(active.id, values as Record<string, unknown>)
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${active.id}.o3s.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // "Import" — load an O3SConfig .json and preview it live. If its id matches a
+  // known effect we select that effect, then push its params into the leva
+  // panel via set() so the controls and the scene both update. Param keys that
+  // aren't in the effect's schema are ignored by leva.
+  const importInputRef = useRef<HTMLInputElement>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const importConfig = async (file: File) => {
+    setImportError(null)
+    try {
+      const config = JSON.parse(await file.text()) as { id?: string; params?: Record<string, unknown> }
+      const entry = config.id ? registry.find((e) => e.id === config.id) : undefined
+      if (!entry) {
+        setImportError(`Unknown effect "${config.id ?? '(missing id)'}"`)
+        return
+      }
+      const params = config.params ?? {}
+      // Switching effects rebuilds the panel; set() the params after the new
+      // schema mounts (next frame) so it targets the right store.
+      if (entry.id !== activeId) {
+        setActiveId(entry.id)
+        requestAnimationFrame(() => setValues(params as never))
+      } else {
+        setValues(params as never)
+      }
+    } catch {
+      setImportError('Not a valid config file')
+    }
+  }
 
   // ScrollScene effects are driven by scroll progress, not the cursor — so the
   // Interact/View toggle is meaningless for them. Instead we visualise their
@@ -115,35 +209,75 @@ export default function App() {
       {/* Ambient color wash behind the glass, for depth. */}
       <div className="ambient" aria-hidden />
 
-      {/* Floating glass sidebar */}
-      <aside className="sidebar glass">
+      {/* Mobile-only hamburger: opens the off-canvas sidebar drawer. */}
+      <button
+        className="nav-toggle glass"
+        aria-label={navOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={navOpen}
+        onClick={() => setNavOpen((o) => !o)}
+      >
+        <span className={navOpen ? 'burger open' : 'burger'} />
+      </button>
+
+      {/* Tap-away scrim behind the open drawer (mobile only). */}
+      {navOpen && <div className="nav-scrim" onClick={() => setNavOpen(false)} aria-hidden />}
+
+      {/* Floating glass sidebar — off-canvas drawer on mobile. */}
+      <aside className={navOpen ? 'sidebar glass open' : 'sidebar glass'}>
         <div className="brand">
           <span className="logo">O3S</span>
           <span className="tagline">3d&#8202;kit</span>
         </div>
 
+        {/* Search / filter the component list. */}
+        <div className="search">
+          <svg className="search-icon" viewBox="0 0 24 24" aria-hidden>
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
+            <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            placeholder="Search components"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search components"
+          />
+          {query && (
+            <button className="search-clear" onClick={() => setQuery('')} aria-label="Clear search">
+              &times;
+            </button>
+          )}
+        </div>
+
         <nav className="nav">
-          {families.map((fam) => (
-            <div key={fam} className="cat">
-              <h3>{fam}</h3>
-              {registry
-                .filter((e) => e.family === fam)
-                .map((e) => (
-                  <button
-                    key={e.id}
-                    className={e.id === activeId ? 'item active' : 'item'}
-                    onClick={() => setActiveId(e.id)}
-                  >
-                    <span className={`dot diff-${e.difficulty}`} />
-                    {e.name}
-                  </button>
-                ))}
-            </div>
-          ))}
+          {families.length === 0 ? (
+            <p className="nav-empty">No components match &ldquo;{query}&rdquo;.</p>
+          ) : (
+            families.map((fam) => (
+              <div key={fam} className="cat">
+                <h3>{fam}</h3>
+                {filtered
+                  .filter((e) => e.family === fam)
+                  .map((e) => (
+                    <button
+                      key={e.id}
+                      className={e.id === activeId ? 'item active' : 'item'}
+                      onClick={() => {
+                        setActiveId(e.id)
+                        setNavOpen(false)
+                      }}
+                    >
+                      <span className={`dot diff-${e.difficulty}`} />
+                      {e.name}
+                    </button>
+                  ))}
+              </div>
+            ))
+          )}
         </nav>
 
         <footer>
-          {registry.length} effects · 6 families
+          {q ? `${filtered.length} of ${registry.length}` : `${registry.length} effects · 6 families`}
           <Link className="demo-link" to="/studio">
             Demo site: Novaforge
           </Link>
@@ -156,6 +290,29 @@ export default function App() {
         <span className={`chip diff diff-${active.difficulty}`}>{active.difficulty}</span>
         <h2>{active.name}</h2>
         <p>{active.description}</p>
+        <div className="config-actions">
+          <button className="copy-config" onClick={copyConfig}>
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+          <button className="copy-config" onClick={exportConfig}>
+            Export
+          </button>
+          <button className="copy-config" onClick={() => importInputRef.current?.click()}>
+            Import
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) importConfig(file)
+              e.target.value = '' // allow re-importing the same file
+            }}
+          />
+        </div>
+        {importError && <p className="config-error">{importError}</p>}
       </header>
 
       {/* Bottom control bar. ScrollScene effects get a scroll visualiser
@@ -201,8 +358,15 @@ export default function App() {
         </div>
       )}
 
-      {/* leva, themed to match the glass */}
-      <Leva theme={levaTheme} titleBar={{ title: 'Controls' }} />
+      {/* leva, themed to match the glass. Collapsed by default on phones so it
+          doesn't cover the header band; the key re-applies that on breakpoint
+          change. */}
+      <Leva
+        key={isCompact ? 'compact' : 'wide'}
+        theme={levaTheme}
+        titleBar={{ title: 'Controls' }}
+        collapsed={isCompact}
+      />
     </div>
   )
 }

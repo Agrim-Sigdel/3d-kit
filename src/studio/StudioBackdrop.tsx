@@ -220,9 +220,9 @@ export function StudioBackdrop({ band, theme }: { band: Band; theme: Theme }) {
       <Stage background={null}>
         {/* Ambient drifting particles shared by every band: continuity across swaps. */}
         <ParticleField
-          count={1800}
-          radius={10}
-          distribution="sphere"
+          count={180000}
+          radius={100}
+          distribution="cone"
           color={p.particleColor}
           size={0.014}
           glow={p.particleGlow}

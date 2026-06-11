@@ -84,7 +84,7 @@ function GameCard({ game, index }: { game: Game; index: number }) {
   return (
     <article className="game-card glass reveal">
       <div className="game-visual">
-        <Stage background={null} defaultLights={false} camera={{ position: [0, 0, 3.2], fov: 45 }}>
+        <Stage background={null} defaultLights={false} camera={{ position: [0, 0, 3.2], fov: 450 }}>
           <InteractiveSurface material={material} size={[7, 8]} params={game.artParams} />
         </Stage>
         <span className="game-index">{String(index + 1).padStart(2, '0')}</span>
@@ -285,7 +285,7 @@ export default function StudioPage() {
         </section>
 
         <footer className="studio-footer" id="footer">
-          <div className="footer-cta reveal">
+          <div className="footer-cta">
             <h2>Get in touch.</h2>
             <p>Press, partnerships, playtests — one inbox, read daily.</p>
             <a className="btn btn-primary" href="mailto:hello@novaforge.games">
