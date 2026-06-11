@@ -88,6 +88,13 @@ ${hsv2rgb}
     cellColor: { value: '#33e0ff' },
     edgeColor: { value: '#0a0f24' },
   },
+  docs: {
+    scale: 'Number of Voronoi cells across the surface',
+    speed: 'How fast the cell sites wander on their per-cell phases',
+    lightRadius: 'Reach of the cursor spotlight that brightens nearby cells',
+    cellColor: 'Color of the cell interiors, hue-jittered per cell',
+    edgeColor: 'Dark color of the borders where neighbouring cells meet',
+  },
   update(u, p) {
     if (typeof p.scale === 'number') u.uScale.value = p.scale
     if (typeof p.speed === 'number') u.uSpeed.value = p.speed

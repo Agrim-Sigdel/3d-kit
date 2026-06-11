@@ -63,6 +63,13 @@ ${fresnel}
     aniso: { value: 0.85, min: 0, max: 1, step: 0.01 },
     contrast: { value: 0.5, min: 0, max: 1, step: 0.01 },
   },
+  docs: {
+    base: 'Underlying metal color the scratches modulate',
+    sheen: 'Highlight color used for the specular band and fresnel edge lift',
+    grain: 'Scratch frequency along the grain axis, higher gives finer brushing',
+    aniso: 'Dials from isotropic matte metal at 0 to fully stretched parallel streaks at 1',
+    contrast: 'How strongly the scratches darken and lighten the base, from flat to full streak spread',
+  },
   update(u, p) {
     if (typeof p.base === 'string') u.uBase.value.set(p.base)
     if (typeof p.sheen === 'string') u.uSheen.value.set(p.sheen)

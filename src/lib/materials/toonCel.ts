@@ -58,6 +58,12 @@ export const toonCel: SurfaceMaterial = {
     steps: { value: 4, min: 2, max: 8, step: 1 },
     outline: { value: 2.5, min: 0.5, max: 6, step: 0.1 },
   },
+  docs: {
+    base: 'Lit color used for the brightest diffuse bands',
+    shadow: 'Color the surface falls to in the unlit bands',
+    steps: 'Number of flat brightness bands the diffuse light is quantized into',
+    outline: 'Fresnel exponent for the silhouette darkening, higher pulls the ink line tighter to the edge',
+  },
   update(u, p) {
     if (typeof p.base === 'string') (u.uBase.value as Color).set(p.base)
     if (typeof p.shadow === 'string') (u.uShadow.value as Color).set(p.shadow)

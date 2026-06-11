@@ -80,6 +80,13 @@ export const frostedGlass: SurfaceMaterial = {
     refract: { value: 0.18, min: 0.0, max: 1.0, step: 0.01 },
     opacity: { value: 0.55, min: 0.0, max: 1.0, step: 0.01 },
   },
+  docs: {
+    tint: 'Base panel color in the denser frost regions',
+    highlight: 'Color the frost shifts toward in brighter regions and along the rim sheen',
+    frost: 'Spread of the 5-tap blur rosette, wider taps read as coarser grinding',
+    refract: 'Strength of the noise-driven UV wobble that makes the frost swim like bent glass',
+    opacity: 'Base panel opacity before frost density and rim glow add to it',
+  },
   update(u, p) {
     if (typeof p.tint === 'string') (u.uTint.value as Color).set(p.tint)
     if (typeof p.highlight === 'string') (u.uHighlight.value as Color).set(p.highlight)

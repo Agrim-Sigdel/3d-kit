@@ -61,6 +61,13 @@ export const kineticType: SurfaceMaterial = {
     warp: { value: 0.35, min: 0, max: 1, step: 0.01 },
     pull: { value: 0.6, min: 0, max: 2, step: 0.01 },
   },
+  docs: {
+    ink: 'Dark stripe color',
+    paper: 'Light background color between the stripes',
+    freq: 'Diagonal stripe density across the surface',
+    warp: 'Amplitude of the flowing noise that bends the stripe phase',
+    pull: 'Strength of the cursor lens that pushes stripes away from the pointer',
+  },
   update(u, p) {
     if (typeof p.ink === 'string') u.uInk.value.set(p.ink)
     if (typeof p.paper === 'string') u.uPaper.value.set(p.paper)

@@ -41,6 +41,10 @@ export const iridescent: SurfaceMaterial = {
     bands: { value: 6.0, min: 1, max: 16, step: 0.5 },
     shiftSpeed: { value: 0.3, min: 0, max: 2, step: 0.05 },
   },
+  docs: {
+    bands: 'How many rainbow repetitions span the surface diagonal',
+    shiftSpeed: 'How fast the hue spectrum drifts across the bands over time',
+  },
   update(u, p) {
     if (typeof p.bands === 'number') u.uBands.value = p.bands
     if (typeof p.shiftSpeed === 'number') u.uShift.value = p.shiftSpeed

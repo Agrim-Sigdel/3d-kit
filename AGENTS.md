@@ -24,8 +24,11 @@ src/
 │   ├── layouts/      Instance-layout variants for <InstancedGrid>.
 │   └── shaders/      Shared GLSL chunks.
 ├── gallery/          Dev-only: the preview app that consumes lib/ (uses leva, router).
-└── studio/           Dev-only: a themed demo site.
-scripts/              Dev-only puppeteer smoke/visual checks.
+├── studio/           Dev-only: a themed demo site (/studio).
+└── showcase/         Dev-only: interactive feature tour of the whole kit (/showcase).
+scripts/              Dev-only puppeteer smoke/visual checks + EFFECTS.md generator.
+.claude/skills/       Agent skills: add-effect, verify-kit, use-kit. Read the one
+                      matching your task before starting.
 ```
 
 ## The one architectural rule
@@ -43,12 +46,19 @@ bundled into consumers and can cause duplicate-instance crashes.
 
 ## Adding a component / material / layout
 
+Full checklist: `.claude/skills/add-effect/SKILL.md`. In short:
+
 1. Create the file under the matching `src/lib/` subdirectory. Use a sibling as a
-   template; match its comment density and naming.
+   template; match its comment density and naming. Surface materials should
+   include a `docs` map (one line per control key).
 2. Export it (and its props/options type) from `src/lib/index.ts`. This file is
    the package boundary — if it isn't exported here, consumers can't use it.
-3. Add a gallery entry in `src/gallery/registry.tsx` so it shows in the preview.
-4. Document it in [EFFECTS.md](./EFFECTS.md).
+3. Add a gallery entry in `src/gallery/registry.tsx` (or via the helpers in
+   `src/gallery/generatedEntries.tsx`) with a `codegen` spec so the gallery's
+   Copy code button and docs emit correct code.
+4. Run `pnpm docs:effects` — it validates every codegen identifier against the
+   real lib exports and regenerates [EFFECTS.md](./EFFECTS.md). Never edit
+   EFFECTS.md by hand.
 
 ## Commands
 

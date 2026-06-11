@@ -83,6 +83,13 @@ export const fractalZoom: SurfaceMaterial = {
     inside: { value: '#05060f' },
     palette: { value: '#3fa9ff' },
   },
+  docs: {
+    iterations: 'Maximum escape-time iterations, higher resolves finer boundary detail at more cost',
+    zoomSpeed: 'Rate of the exponential dive into the fractal over time',
+    julia: 'Blends the seed from Mandelbrot at 0 to a fixed-c Julia set at 1',
+    inside: 'Flat tint for interior points that never escape',
+    palette: 'Color whose channels set the base hue offset, saturation and brightness of the escape coloring',
+  },
   update(u, p){
     if (typeof p.iterations === 'number') u.uIterations.value = p.iterations
     if (typeof p.zoomSpeed === 'number') u.uZoomSpeed.value = p.zoomSpeed

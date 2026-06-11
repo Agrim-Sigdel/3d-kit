@@ -68,6 +68,12 @@ export const plasma: SurfaceMaterial = {
     colorA: { value: '#ff2d75' },
     colorB: { value: '#1fa2ff' },
   },
+  docs: {
+    scale: 'Spatial frequency of the summed sine waves, higher packs more swirls into the surface',
+    speed: 'How fast the plasma interference pattern flows',
+    colorA: 'First brand tint the rainbow output is biased toward on the wave crests',
+    colorB: 'Second brand tint mixed in along the wave fold',
+  },
   update(u, p) {
     if (typeof p.scale === 'number') u.uScale.value = p.scale
     if (typeof p.speed === 'number') u.uSpeed.value = p.speed

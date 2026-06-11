@@ -38,6 +38,36 @@ export type Family =
 
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
+/**
+ * CodegenSpec — how an entry's flat leva values map back to real JSX.
+ *
+ * Declarative on purpose: the "Copy code" generator, the docs panel, and the
+ * EFFECTS.md script all read the SAME spec, so a documented snippet and the
+ * copied code can never diverge. Identifiers here must be actual exports of
+ * src/lib/index.ts (the docs script validates this).
+ */
+export interface CodegenSpec {
+  /** Component export name, e.g. 'InteractiveSurface'. */
+  component: string
+  kind: 'props' | 'surface' | 'layout'
+  /** kind 'surface': material export name. Defaults to camelCase(entry.id). */
+  materialExport?: string
+  /** kind 'surface': extra fixed props as raw code strings, e.g. { segments: '64' }. */
+  fixedProps?: Record<string, string>
+  /** kind 'layout': factory export name, e.g. 'orbitLayout'. */
+  layoutFactory?: string
+  /** kind 'layout': flat leva keys routed into the factory; the rest become props. */
+  layoutKeys?: string[]
+  /** Control keys the render ignores — never emitted (e.g. a vestigial slider). */
+  omitKeys?: string[]
+  /** Literal JSX children, e.g. ScrollScene's demo child. */
+  childrenCode?: string
+  /** Literal sibling JSX emitted before the component (PostFX demo scene). */
+  siblingsCode?: string
+  /** Extra named imports needed by childrenCode / siblingsCode. */
+  extraImports?: string[]
+}
+
 export interface GalleryEntry {
   id: string
   name: string
@@ -50,6 +80,10 @@ export interface GalleryEntry {
   controls: Record<string, unknown>
   /** Render the component given the live control values. */
   render: (v: Record<string, unknown>) => ReactNode
+  /** How values map back to pasteable code ("Copy code", docs, EFFECTS.md). */
+  codegen?: CodegenSpec
+  /** Per-prop descriptions + free-form notes for the docs panel / EFFECTS.md. */
+  docs?: { props?: Record<string, string>; notes?: string }
 }
 
 /**
@@ -78,6 +112,12 @@ function surfaceEntry(
     render: (v) => (
       <InteractiveSurface material={material} segments={opts.segments} params={v} />
     ),
+    codegen: {
+      component: 'InteractiveSurface',
+      kind: 'surface',
+      fixedProps: opts.segments !== undefined ? { segments: String(opts.segments) } : undefined,
+    },
+    docs: material.docs ? { props: material.docs } : undefined,
   }
 }
 
@@ -108,6 +148,21 @@ export const registry: GalleryEntry[] = [
       }),
     },
     render: (v) => <ParticleField {...(v as any)} />,
+    codegen: { component: 'ParticleField', kind: 'props' },
+    docs: {
+      props: {
+        count: 'How many points are in the cloud',
+        radius: 'Overall size of the cloud in world units',
+        distribution: 'Shape the points fill: solid sphere, cube, flat disc, or hollow shell',
+        color: 'Point color',
+        size: 'Size of each point',
+        opacity: 'Point transparency',
+        glow: 'Additive blending so overlapping points brighten',
+        sizeAttenuation: 'Points shrink with distance from the camera',
+        speed: 'How fast the cloud tumbles',
+        tumble: 'How much the tumble axis wanders',
+      },
+    },
   },
   {
     id: 'ripple-shader',
@@ -129,6 +184,18 @@ export const registry: GalleryEntry[] = [
       }),
     },
     render: (v) => <RippleShader {...(v as any)} />,
+    codegen: { component: 'RippleShader', kind: 'props' },
+    docs: {
+      props: {
+        colorA: 'Base color of the plane',
+        colorB: 'Color of the ripple crests',
+        frequency: 'How many ripple rings fit across the plane',
+        speed: 'How fast the rings travel outward',
+        falloff: 'How quickly ripples fade with distance from the cursor',
+        intensity: 'Overall strength of the ripple displacement',
+      },
+      notes: 'Move the cursor over the plane to drive the ripples.',
+    },
   },
   {
     id: 'floating-object',
@@ -149,6 +216,28 @@ export const registry: GalleryEntry[] = [
       ...transformGroup(),
     },
     render: (v) => <FloatingObject {...(v as any)} />,
+    codegen: { component: 'FloatingObject', kind: 'props' },
+    docs: {
+      props: {
+        shape: 'Which primitive geometry to float',
+        detail: 'Geometry subdivision / segment count',
+        color: 'Surface color',
+        roughness: 'Microsurface roughness (0 = mirror, 1 = matte)',
+        metalness: 'How metallic the surface responds to light',
+        emissive: 'Self-illumination color',
+        emissiveIntensity: 'Strength of the self-illumination',
+        wireframe: 'Render as wireframe',
+        opacity: 'Surface transparency',
+        flatShading: 'Faceted (low-poly) shading instead of smooth normals',
+        speed: 'Speed of the idle float cycle',
+        amplitude: 'How far the object bobs up and down',
+        spin: 'Continuous Y rotation speed',
+        hoverScale: 'Scale multiplier while the cursor hovers the object',
+        position: 'Base position in world units',
+        rotation: 'Base rotation in radians',
+        scale: 'Uniform scale multiplier',
+      },
+    },
   },
   {
     id: 'scroll-scene',
@@ -167,6 +256,20 @@ export const registry: GalleryEntry[] = [
         <FloatingObject />
       </ScrollScene>
     ),
+    codegen: {
+      component: 'ScrollScene',
+      kind: 'props',
+      childrenCode: '<FloatingObject />',
+      extraImports: ['FloatingObject'],
+    },
+    docs: {
+      props: {
+        rotations: 'Full Y rotations across the whole scroll range',
+        zTravel: 'How far the group dollies toward the camera across the range',
+      },
+      notes:
+        'Wrap any children; they stay scroll-ignorant. For more channels (lift, parallax, reveal, drift) plus entrance and idle animation, use ScrollAnimator instead.',
+    },
   },
   {
     id: 'postfx',
@@ -188,6 +291,21 @@ export const registry: GalleryEntry[] = [
         <PostFX {...(v as any)} />
       </>
     ),
+    codegen: {
+      component: 'PostFX',
+      kind: 'props',
+      siblingsCode: '<FloatingObject color="#88ddff" />\n<ParticleField count={1500} radius={5} />',
+      extraImports: ['FloatingObject', 'ParticleField'],
+    },
+    docs: {
+      props: {
+        bloom: 'Bloom (glow) strength on bright areas',
+        bloomThreshold: 'Luminance above which pixels start to bloom',
+        vignette: 'Darkening toward the screen edges',
+        noise: 'Animated film-grain amount',
+      },
+      notes: 'Requires the optional peer @react-three/postprocessing. Add as the LAST child of Stage.',
+    },
   },
 
   // ── InteractiveSurface variants — each is ONE line via surfaceEntry(). ──
@@ -252,6 +370,30 @@ export const registry: GalleryEntry[] = [
         wireframe={v.wireframe as boolean}
       />
     ),
+    codegen: {
+      component: 'InstancedGrid',
+      kind: 'layout',
+      layoutFactory: 'orbitLayout',
+      layoutKeys: ['count', 'shells', 'radius', 'spacing', 'speed', 'cursorPush'],
+    },
+    docs: {
+      props: {
+        count: 'Total number of instances (one draw call)',
+        shells: 'How many nested orbit shells the instances spread across',
+        radius: 'Radius of the innermost shell',
+        spacing: 'Gap between consecutive shells',
+        speed: 'Orbit speed',
+        cursorPush: 'How strongly the cursor repels nearby instances',
+        shape: 'Primitive geometry used for every instance',
+        instanceSize: 'Size of each instance',
+        color: 'Instance color',
+        roughness: 'Microsurface roughness',
+        metalness: 'How metallic instances respond to light',
+        emissive: 'Self-illumination color',
+        emissiveIntensity: 'Strength of the self-illumination',
+        wireframe: 'Render instances as wireframe',
+      },
+    },
   },
 
   // ── All workflow-authored effects (40) appended here. ──

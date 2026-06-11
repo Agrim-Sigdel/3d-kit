@@ -74,6 +74,13 @@ export const scanlines: SurfaceMaterial = {
     aberration: { value: 0.004, min: 0.0, max: 0.02, step: 0.0005 },
     flicker: { value: 0.08, min: 0.0, max: 0.4, step: 0.01 },
   },
+  docs: {
+    tint: 'Phosphor color the monochrome image is tinted toward',
+    dark: 'Frame color the vignette fades to at the edges',
+    lineFreq: 'Frequency of the horizontal scanline darkening, higher gives finer rows',
+    aberration: 'RGB split distance that grows toward the tube edges',
+    flicker: 'Depth of the global brightness wobble',
+  },
   update(u, p) {
     if (typeof p.tint === 'string') (u.uTint.value as Color).set(p.tint)
     if (typeof p.dark === 'string') (u.uDark.value as Color).set(p.dark)

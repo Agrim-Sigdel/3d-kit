@@ -90,6 +90,13 @@ export const rainStreaks: SurfaceMaterial = {
     speed: { value: 0.6, min: 0.1, max: 2.0, step: 0.05 },
     blur: { value: 0.35, min: 0.05, max: 1.0, step: 0.01 },
   },
+  docs: {
+    glassColor: 'Base color of the wet glass pane',
+    streakColor: 'Color of the droplet beads, trails and condensation haze',
+    density: 'Number of vertical rain columns across the surface',
+    speed: 'Multiplier on how fast droplets fall down their columns',
+    blur: 'Lateral softness of each streak, wider reads as more out-of-focus refraction',
+  },
   update(u, p) {
     if (typeof p.glassColor === 'string') u.uGlassColor.value.set(p.glassColor)
     if (typeof p.streakColor === 'string') u.uStreakColor.value.set(p.streakColor)

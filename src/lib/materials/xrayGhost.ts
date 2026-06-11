@@ -72,6 +72,13 @@ export const xrayGhost: SurfaceMaterial = {
     opacity: { value: 0.55, min: 0, max: 1, step: 0.01 },
   },
 
+  docs: {
+    rimColor: 'Luminous color of the grazing-angle fresnel rim',
+    coreColor: 'Faint color of the hollow body away from the edges',
+    rimPower: 'Fresnel exponent that sets how tightly the glow hugs the silhouette',
+    opacity: 'Overall alpha scale, with the core staying near-invisible and the rim solid',
+  },
+
   update(u, p) {
     if (typeof p.rimColor === 'string') (u.uRimColor.value as Color).set(p.rimColor)
     if (typeof p.coreColor === 'string') (u.uCoreColor.value as Color).set(p.coreColor)

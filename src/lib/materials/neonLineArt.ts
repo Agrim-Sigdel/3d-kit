@@ -62,6 +62,13 @@ export const neonLineArt: SurfaceMaterial = {
     thickness: { value: 0.04, min: 0.005, max: 0.2, step: 0.005 },
     pulse: { value: 1, min: 0, max: 3, step: 0.05 },
   },
+  docs: {
+    lineColor: 'Emissive color of the glowing grid tubes',
+    bgColor: 'Near-black backdrop the lines are added over',
+    density: 'Number of grid cells across the surface',
+    thickness: 'Half-width of each line in cell space',
+    pulse: 'Global brightness multiplier on the travelling glow wave',
+  },
   update(u, p) {
     if (typeof p.lineColor === 'string') u.uLineColor.value.set(p.lineColor)
     if (typeof p.bgColor === 'string') u.uBgColor.value.set(p.bgColor)

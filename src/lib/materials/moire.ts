@@ -67,6 +67,13 @@ export const moire: SurfaceMaterial = {
     angle: { value: 0.08, min: 0.0, max: 0.6, step: 0.005 },
     sharpness: { value: 2.2, min: 0.5, max: 6, step: 0.1 },
   },
+  docs: {
+    colorA: 'Color of the dark interference troughs',
+    colorB: 'Color of the bright interference fringes',
+    frequency: 'Line density of both gratings, higher packs more lines and finer beats',
+    angle: 'Angular spread between the two gratings in radians, which sets the fringe spacing',
+    sharpness: 'Contrast exponent on the grating product, higher gives crisper fringes',
+  },
   update(u, p) {
     if (typeof p.colorA === 'string') (u.uColorA.value as Color).set(p.colorA)
     if (typeof p.colorB === 'string') (u.uColorB.value as Color).set(p.colorB)

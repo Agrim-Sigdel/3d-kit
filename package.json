@@ -1,6 +1,6 @@
 {
   "name": "easy-3dkit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A reusable library of interactive 3D components for React (R3F + three.js + GSAP)",
   "type": "module",
   "license": "MIT",
@@ -46,6 +46,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "smoke": "node scripts/smoke.mjs",
+    "docs:effects": "node scripts/gen-effects-docs.mjs",
     "build:lib": "vite build --config vite.lib.config.ts",
     "build:types": "tsc -p tsconfig.lib.json",
     "build:pkg": "npm run build:lib && npm run build:types",

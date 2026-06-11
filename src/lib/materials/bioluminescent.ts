@@ -70,6 +70,14 @@ ${hsv2rgb}
     intensity: { value: 1.4, min: 0.2, max: 4.0, step: 0.1 },
   },
 
+  docs: {
+    glow: 'Emissive color of the pulsing filament cells',
+    base: 'Near-black surface color the glow is added onto',
+    scale: 'Cell density of the domain-warped noise field, higher gives smaller filaments',
+    breath: 'Speed of the out-of-phase brightening and dimming of each cell region',
+    intensity: 'Gain on the emissive glow added over the base',
+  },
+
   update(u, p) {
     if (typeof p.glow === 'string') (u.uGlow.value as Color).set(p.glow)
     if (typeof p.base === 'string') (u.uBase.value as Color).set(p.base)

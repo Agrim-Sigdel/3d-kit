@@ -93,6 +93,13 @@ ${hsv2rgb}
     colorA: { value: '#0a1fff' },
     colorB: { value: '#ff2d95' },
   },
+  docs: {
+    count: 'How many orbiting metaballs contribute to the field',
+    smooth: 'Smooth-min blend width that controls how gooily blobs fuse together',
+    speed: 'How fast the metaballs orbit their paths',
+    colorA: 'Palette endpoint the blob body mixes from',
+    colorB: 'Palette endpoint the blob body mixes toward',
+  },
   update(u, p) {
     if (typeof p.count === 'number') u.uCount.value = p.count
     if (typeof p.smooth === 'number') u.uSmooth.value = p.smooth

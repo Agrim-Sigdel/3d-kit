@@ -79,6 +79,13 @@ export const holographicFoil: SurfaceMaterial = {
     grain: { value: 0.15, min: 0.0, max: 0.6, step: 0.01 },
   },
 
+  docs: {
+    tint: 'Multiplier color applied over the whole rainbow foil',
+    hueScale: 'How many rainbow cycles fit across the fresnel sweep from face-on to grazing',
+    streakSharp: 'Tightness of the anisotropic specular streak, higher collapses it into a thin band',
+    grain: 'Amplitude of the micro-noise that breaks up the otherwise perfect rainbow bands',
+  },
+
   update(u, p) {
     if (typeof p.tint === 'string') u.uTint.value.set(p.tint as string)
     if (typeof p.hueScale === 'number') u.uHueScale.value = p.hueScale

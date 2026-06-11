@@ -11,6 +11,13 @@ export type { StageProps } from './engine/Stage'
 export { CameraRig } from './engine/CameraRig'
 export type { CameraRigProps } from './engine/CameraRig'
 export {
+  DEFAULT_VIEW,
+  viewAngleToPosition,
+  positionToViewAngle,
+  type ViewAngle,
+} from './engine/viewAngle'
+export { EASINGS, type EaseName } from './engine/easing'
+export {
   useInputMode,
   setInputMode,
   toggleInputMode,
@@ -36,6 +43,8 @@ export { FloatingObject } from './components/FloatingObject'
 export type { FloatingObjectProps } from './components/FloatingObject'
 export { ScrollScene } from './components/ScrollScene'
 export type { ScrollSceneProps } from './components/ScrollScene'
+export { ScrollAnimator } from './components/ScrollAnimator'
+export type { ScrollAnimatorProps, EntranceMode, IdleMode } from './components/ScrollAnimator'
 export { PostFX } from './components/PostFX'
 export type { PostFXProps } from './components/PostFX'
 export { InteractiveSurface } from './components/InteractiveSurface'

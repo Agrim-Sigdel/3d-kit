@@ -1,7 +1,7 @@
 import puppeteer from "puppeteer-core"
 
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-const URL = "http://localhost:5173/"
+const URL = process.env.SMOKE_URL || "http://localhost:5173/"
 
 const browser = await puppeteer.launch({
   executablePath: CHROME,
@@ -26,12 +26,23 @@ await new Promise(r => setTimeout(r, 800))
 const items = await page.$$eval(".item", els => els.map(e => e.textContent.trim()))
 console.log("Found", items.length, "effects")
 
+// Open the Docs panel once; it stays open across effect switches, so every
+// effect also exercises the live code generator (an empty snippet = failure).
+await page.evaluate(() => {
+  const btn = [...document.querySelectorAll(".copy-config")].find(b => b.textContent.trim() === "Docs")
+  if (btn) btn.click()
+})
+await new Promise(r => setTimeout(r, 200))
+
 const results = []
 for (let i = 0; i < items.length; i++) {
   errors = []
   const handles = await page.$$(".item")
   await handles[i].click()
   await new Promise(r => setTimeout(r, 450))
+  const code = await page.$eval(".docs-code code", el => el.textContent.trim()).catch(() => "")
+  if (!code) errors.push("docs panel: empty or missing usage snippet")
+  if (!code.includes("from 'easy-3dkit'")) errors.push("docs panel: snippet missing easy-3dkit import")
   results.push({ name: items[i], errs: [...new Set(errors)].slice(0,3) })
 }
 await browser.close()

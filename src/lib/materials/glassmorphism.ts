@@ -46,6 +46,11 @@ export const glassmorphism: SurfaceMaterial = {
     opacity: { value: 0.55, min: 0.1, max: 1, step: 0.05 },
     blobScale: { value: 1.4, min: 0.3, max: 4, step: 0.1 },
   },
+  docs: {
+    tint: 'Base glass color the frost noise modulates between its dark and bright shades',
+    opacity: 'Baseline translucency of the panel before the cursor sheen adds extra alpha',
+    blobScale: 'Spatial frequency of the layered frost noise, higher values give finer grain',
+  },
   update(u, p) {
     if (p.tint) (u.uTint.value as Color).set(p.tint as string)
     if (typeof p.opacity === 'number') u.uOpacity.value = p.opacity

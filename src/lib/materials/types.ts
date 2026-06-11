@@ -29,6 +29,12 @@ export interface SurfaceMaterial {
   update?: (u: Record<string, IUniform>, props: Record<string, unknown>) => void
   /** leva control schema for this variant (optional). */
   controls?: Record<string, unknown>
+  /**
+   * One-line human description per control key (e.g. strength: 'How far the
+   * shimmer displaces the gradient'). Surfaces in the gallery docs panel and
+   * the generated EFFECTS.md — keep shader knowledge next to the shader.
+   */
+  docs?: Record<string, string>
   /** Render transparent / double-sided? Defaults: opaque, front-side. */
   transparent?: boolean
   doubleSide?: boolean

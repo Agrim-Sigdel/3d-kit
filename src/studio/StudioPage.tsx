@@ -192,10 +192,7 @@ export default function StudioPage() {
               </a>
             ))}
           </div>
-          <div className="scroll-hint" aria-hidden>
-            <span />
-            scroll
-          </div>
+        
         </section>
 
         <section className="games" id="games">

@@ -60,6 +60,47 @@ export const motionGroup = (opts?: { speed?: number; amplitude?: number }) => ({
   }),
 })
 
+/** Camera viewpoint — drives <CameraRig view={...}>. App-level, not per-entry. */
+export const viewGroup = () => ({
+  azimuth: { value: 0, min: -180, max: 180, step: 1 },
+  elevation: { value: 0, min: -85, max: 85, step: 1 },
+  distance: { value: 6, min: 2, max: 20, step: 0.1 },
+})
+
+/** ScrollAnimator knobs — drives the wrapper around every effect. App-level. */
+export const animationGroup = () => ({
+  // Master multiplier for the time-driven layers (entrance + idle).
+  speed: { value: 1, min: 0.1, max: 4, step: 0.1, label: 'speed (entrance+idle)' },
+  Scroll: folder(
+    {
+      rotate: { value: 0, min: -4, max: 4, step: 0.25, label: 'rotate (turns)' },
+      zoom: { value: 0, min: -10, max: 10, step: 0.5 },
+      lift: { value: 0, min: -10, max: 10, step: 0.5 },
+      parallax: { value: 0, min: 0, max: 5, step: 0.1 },
+      reveal: { value: 0, min: 0, max: 1, step: 0.05 },
+      drift: { value: 0, min: 0, max: 3, step: 0.1 },
+      ease: { value: 'linear', options: ['linear', 'easeIn', 'easeOut', 'easeInOut', 'backOut', 'elasticOut'] },
+    },
+    { collapsed: true },
+  ),
+  Entrance: folder(
+    {
+      entrance: { value: 'none', options: ['none', 'rise', 'scaleIn', 'spinIn', 'dropIn'] },
+      entranceDuration: { value: 0.9, min: 0.1, max: 4, step: 0.1 },
+      entranceDelay: { value: 0, min: 0, max: 3, step: 0.1 },
+    },
+    { collapsed: true },
+  ),
+  Idle: folder(
+    {
+      idle: { value: 'none', options: ['none', 'bob', 'sway', 'pulse'] },
+      idleSpeed: { value: 1, min: 0, max: 4, step: 0.1 },
+      idleAmplitude: { value: 0.15, min: 0, max: 1, step: 0.01 },
+    },
+    { collapsed: true },
+  ),
+})
+
 /** Transform folder — position / rotation / uniform scale on an object. */
 export const transformGroup = () => ({
   Transform: folder(

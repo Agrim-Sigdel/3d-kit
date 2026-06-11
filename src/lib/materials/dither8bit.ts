@@ -78,6 +78,12 @@ export const dither8bit: SurfaceMaterial = {
     levels: { value: 4, min: 2, max: 12, step: 1 },
     pixel: { value: 96, min: 16, max: 256, step: 1 },
   },
+  docs: {
+    dark: 'Palette endpoint for the lowest quantized levels',
+    light: 'Palette endpoint for the brightest levels, with a slow built-in hue shimmer',
+    levels: 'Number of brightness steps the gradient is posterized into',
+    pixel: 'Logical pixel-grid resolution, lower gives chunkier retro blocks',
+  },
   update(u, p) {
     if (typeof p.dark === 'string') (u.uDark.value as Color).set(p.dark)
     if (typeof p.light === 'string') (u.uLight.value as Color).set(p.light)

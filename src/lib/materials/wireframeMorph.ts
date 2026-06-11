@@ -55,6 +55,13 @@ export const wireframeMorph: SurfaceMaterial = {
     lineWidth: { value: 0.04, min: 0.005, max: 0.2, step: 0.005 },
     morphSpeed: { value: 0.5, min: 0.0, max: 3.0, step: 0.05 },
   },
+  docs: {
+    lineColor: 'Color of the grid lines and the flooded fill at full morph',
+    fillColor: 'Background color inside the grid cells',
+    density: 'Number of grid cells across the surface',
+    lineWidth: 'Base half-width of each grid line before the morph widens it into solid fill',
+    morphSpeed: 'Rate of the time oscillation that swells lines toward full fill',
+  },
   update(u, p) {
     if (typeof p.lineColor === 'string') u.uLineColor.value.set(p.lineColor)
     if (typeof p.fillColor === 'string') u.uFillColor.value.set(p.fillColor)

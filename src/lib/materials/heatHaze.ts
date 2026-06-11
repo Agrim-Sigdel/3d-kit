@@ -63,6 +63,13 @@ export const heatHaze: SurfaceMaterial = {
     speed: { value: 1.2, min: 0.0, max: 4.0, step: 0.1 },
     scale: { value: 5.0, min: 1.0, max: 16.0, step: 0.5 },
   },
+  docs: {
+    colorTop: 'Gradient color at the cool top of the surface',
+    colorBottom: 'Gradient color at the hot bottom where the haze pools',
+    strength: 'How far the shimmer displaces the background gradient',
+    speed: 'How fast the heat plumes rise',
+    scale: 'Spatial frequency of the distortion noise, higher gives finer ripples',
+  },
   update(u, p) {
     if (typeof p.colorTop === 'string') (u.uColorTop.value as Color).set(p.colorTop)
     if (typeof p.colorBottom === 'string') (u.uColorBottom.value as Color).set(p.colorBottom)

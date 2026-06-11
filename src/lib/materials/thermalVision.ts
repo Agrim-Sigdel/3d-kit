@@ -43,6 +43,10 @@ export const thermalVision: SurfaceMaterial = {
     intensity: { value: 1.0, min: 0.2, max: 2.5, step: 0.1 },
     noiseScale: { value: 3.0, min: 0.5, max: 8, step: 0.5 },
   },
+  docs: {
+    intensity: 'Overall heat gain, pushing more of the surface toward the red and white-hot end of the ramp',
+    noiseScale: 'Spatial frequency of the heat noise, higher values give smaller hot patches',
+  },
   update(u, p) {
     if (typeof p.intensity === 'number') u.uIntensity.value = p.intensity
     if (typeof p.noiseScale === 'number') u.uScaleN.value = p.noiseScale

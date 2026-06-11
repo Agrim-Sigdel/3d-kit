@@ -379,6 +379,117 @@ body,
   color: #fff;
 }
 
+/* ── Docs panel ────────────────────────────────────────────────── */
+
+.docs-panel {
+  position: absolute;
+  z-index: 25;
+  left: 292px;
+  top: 170px;
+  bottom: 90px;
+  width: min(560px, calc(100vw - 320px));
+  padding: 18px 20px;
+  overflow-y: auto;
+}
+.docs-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.docs-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+.docs-close {
+  margin-left: auto;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.docs-close:hover {
+  color: var(--accent);
+}
+.docs-desc {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.docs-notes {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--accent);
+}
+.docs-panel h4 {
+  margin: 16px 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.docs-props {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.docs-props th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+.docs-props td {
+  padding: 5px 8px 5px 0;
+  border-bottom: 1px solid var(--glass-border);
+  vertical-align: top;
+  line-height: 1.4;
+}
+.docs-props code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  color: var(--accent);
+}
+.docs-usage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.docs-usage-head h4 {
+  margin: 16px 0 8px;
+}
+.docs-code {
+  margin: 0;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(8, 12, 20, 0.55);
+  border: 1px solid var(--glass-border);
+  overflow-x: auto;
+}
+.docs-code code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.55;
+  white-space: pre;
+}
+
+@media (max-width: 720px) {
+  .docs-panel {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    top: 150px;
+    bottom: 80px;
+  }
+}
+
 /* Difficulty badges + nav dots */
 .chip.diff {
   margin-left: 6px;

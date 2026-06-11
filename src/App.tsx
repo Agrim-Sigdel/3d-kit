@@ -4,14 +4,22 @@ import { Leva, useControls } from 'leva'
 import {
   Stage,
   CameraRig,
+  ScrollAnimator,
   useInputMode,
   setInputMode,
   toggleInputMode,
   setScrollOverride,
+  type EaseName,
+  type EntranceMode,
+  type IdleMode,
+  type ViewAngle,
 } from '@o3s/lib'
 import { registry, type Family } from './gallery/registry'
-import { toO3SConfig } from './gallery/O3SElement'
+import { toO3SConfig, type O3SConfig } from './gallery/O3SElement'
 import { levaTheme } from './gallery/levaTheme'
+import { viewGroup, animationGroup } from './gallery/controls'
+import { generateCode, DEFAULT_ANIMATION, type AnimationValues } from './gallery/codegen'
+import { DocsPanel } from './gallery/DocsPanel'
 
 /**
  * Gallery shell (Layer 4) — glassmorphism.
@@ -40,6 +48,9 @@ export default function App() {
   // Mobile: the sidebar is an off-canvas drawer toggled by a hamburger.
   const [navOpen, setNavOpen] = useState(false)
 
+  // Per-effect docs panel (props table + live usage snippet).
+  const [docsOpen, setDocsOpen] = useState(false)
+
   // On phones the leva panel would cover the header band, so collapse it by
   // default there. Tracks the breakpoint live so a rotate/resize re-applies.
   const [isCompact, setIsCompact] = useState(
@@ -62,6 +73,28 @@ export default function App() {
     [active.id],
   )
 
+  // App-level Camera store — persists across effect switches, drives the
+  // CameraRig's declarative view, and is captured by Copy code / Copy JSON.
+  // Hand-orbiting in View mode writes back into these sliders (two-way sync).
+  const [viewValues, setViewValues] = useControls('Camera', () => viewGroup())
+  const view: ViewAngle = viewValues
+
+  // App-level Animation store — the ScrollAnimator wrapper around EVERY
+  // effect. All channels default to off, so it's a passthrough until used.
+  const [animRaw, setAnimValues] = useControls('Animation', () => animationGroup())
+  const animation = animRaw as unknown as AnimationValues & {
+    ease: EaseName
+    entrance: EntranceMode
+    idle: IdleMode
+  }
+  const anyScrollChannel =
+    animation.rotate !== 0 ||
+    animation.zoom !== 0 ||
+    animation.lift !== 0 ||
+    animation.parallax !== 0 ||
+    animation.reveal !== 0 ||
+    animation.drift !== 0
+
   // Canonical 6-family order; only show families that have entries.
   const FAMILY_ORDER: Family[] = [
     'InteractiveSurface',
@@ -75,28 +108,42 @@ export default function App() {
 
   const mode = useInputMode()
 
-  // "Copy config" — serialize the active effect's live leva values into a
-  // portable O3SConfig JSON blob and write it to the clipboard. Paste it into
+  const writeClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      // Clipboard API blocked (insecure context / permissions) — fall back to
+      // logging so the content is still recoverable.
+      console.log(text)
+    }
+  }
+
+  // "Copy code" — generate the exact, ready-to-paste React file for the
+  // current effect, leva values, camera view, and animation settings.
+  const [copiedCode, setCopiedCode] = useState(false)
+  const copyCode = async () => {
+    await writeClipboard(
+      generateCode(active, values as Record<string, unknown>, { view, animation }),
+    )
+    setCopiedCode(true)
+    window.setTimeout(() => setCopiedCode(false), 1500)
+  }
+
+  // "Copy JSON" — serialize the active effect's live leva values (plus any
+  // non-default view/animation) into a portable O3SConfig blob. Paste it into
   // a site's content file, or straight into <O3SElement config={...} />.
   const [copied, setCopied] = useState(false)
   const copyConfig = async () => {
-    const config = toO3SConfig(active.id, values as Record<string, unknown>)
-    const json = JSON.stringify(config, null, 2)
-    try {
-      await navigator.clipboard.writeText(json)
-    } catch {
-      // Clipboard API blocked (insecure context / permissions) — fall back to
-      // logging so the config is still recoverable.
-      console.log(json)
-    }
+    const config = toO3SConfig(active.id, values as Record<string, unknown>, { view, animation })
+    await writeClipboard(JSON.stringify(config, null, 2))
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1500)
   }
 
   // "Export" — download the active effect's config as a .json file, named by
-  // effect id. Same O3SConfig shape as Copy, just a file instead of clipboard.
+  // effect id. Same O3SConfig shape as Copy JSON, just a file instead of clipboard.
   const exportConfig = () => {
-    const config = toO3SConfig(active.id, values as Record<string, unknown>)
+    const config = toO3SConfig(active.id, values as Record<string, unknown>, { view, animation })
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -115,13 +162,21 @@ export default function App() {
   const importConfig = async (file: File) => {
     setImportError(null)
     try {
-      const config = JSON.parse(await file.text()) as { id?: string; params?: Record<string, unknown> }
+      const config = JSON.parse(await file.text()) as Partial<O3SConfig>
       const entry = config.id ? registry.find((e) => e.id === config.id) : undefined
       if (!entry) {
         setImportError(`Unknown effect "${config.id ?? '(missing id)'}"`)
         return
       }
       const params = config.params ?? {}
+      // Restore camera + animation too — absent fields reset to defaults so an
+      // old (v1) config doesn't inherit this session's leftover settings.
+      setViewValues({
+        azimuth: config.view?.azimuth ?? 0,
+        elevation: config.view?.elevation ?? 0,
+        distance: config.view?.distance ?? 6,
+      })
+      setAnimValues({ ...DEFAULT_ANIMATION, ...config.animation } as never)
       // Switching effects rebuilds the panel; set() the params after the new
       // schema mounts (next frame) so it targets the right store.
       if (entry.id !== activeId) {
@@ -138,21 +193,24 @@ export default function App() {
   // ScrollScene effects are driven by scroll progress, not the cursor — so the
   // Interact/View toggle is meaningless for them. Instead we visualise their
   // scroll range with a slider + auto-play that drives the scroll override.
+  // The same visualiser appears whenever a ScrollAnimator channel is active,
+  // whatever the effect's family.
   const isScrollFamily = active.family === 'ScrollScene'
+  const scrollDriven = isScrollFamily || anyScrollChannel
   const [scroll, setScroll] = useState(0)
   const [autoPlay, setAutoPlay] = useState(true)
   const rafRef = useRef(0)
 
-  // Apply / clear the scroll override based on the active family.
+  // Apply / clear the scroll override based on whether anything is scroll-driven.
   useEffect(() => {
-    if (isScrollFamily) setScrollOverride(scroll)
+    if (scrollDriven) setScrollOverride(scroll)
     else setScrollOverride(null)
     return () => setScrollOverride(null)
-  }, [isScrollFamily, scroll])
+  }, [scrollDriven, scroll])
 
   // Auto-play loop: sweep scroll 0→1→0 so the scroll behaviour plays on its own.
   useEffect(() => {
-    if (!isScrollFamily || !autoPlay) return
+    if (!scrollDriven || !autoPlay) return
     let dir = 1
     let last = performance.now()
     const tick = (now: number) => {
@@ -168,7 +226,7 @@ export default function App() {
     }
     rafRef.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [isScrollFamily, autoPlay])
+  }, [scrollDriven, autoPlay])
 
   // Keyboard shortcut: hold Space (or press V) to flip to View, release to Interact.
   // (Disabled for ScrollScene effects — camera modes don't apply there.)
@@ -198,11 +256,25 @@ export default function App() {
       {/* Full-bleed live scene — the thing every glass panel blurs. */}
       <div className="stage-layer">
         <Stage background={null}>
-          {active.render(values as Record<string, unknown>)}
+          {/* The Animation store wraps EVERY effect; with all channels off it
+              is a plain passthrough group. */}
+          <ScrollAnimator {...animation}>
+            {active.render(values as Record<string, unknown>)}
+          </ScrollAnimator>
           {/* Camera is a SEPARATE entity, not part of any effect. It only
               responds in View mode, so it never fights cursor-bound effects.
-              Present on every effect — you can always orbit the view. */}
-          <CameraRig />
+              Present on every effect — you can always orbit the view. The
+              Camera sliders drive it, and hand-orbits write back into them. */}
+          <CameraRig
+            view={view}
+            onViewChange={(v) =>
+              setViewValues({
+                azimuth: Math.round(v.azimuth),
+                elevation: Math.round(v.elevation),
+                distance: Math.round(v.distance * 10) / 10,
+              })
+            }
+          />
         </Stage>
       </div>
 
@@ -281,6 +353,9 @@ export default function App() {
           <Link className="demo-link" to="/studio">
             Demo site: Novaforge
           </Link>
+          <Link className="demo-link" to="/showcase">
+            Feature tour: Showcase
+          </Link>
         </footer>
       </aside>
 
@@ -291,8 +366,14 @@ export default function App() {
         <h2>{active.name}</h2>
         <p>{active.description}</p>
         <div className="config-actions">
+          <button className="copy-config" onClick={copyCode}>
+            {copiedCode ? 'Copied' : 'Copy code'}
+          </button>
           <button className="copy-config" onClick={copyConfig}>
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? 'Copied' : 'Copy JSON'}
+          </button>
+          <button className="copy-config" onClick={() => setDocsOpen((o) => !o)}>
+            Docs
           </button>
           <button className="copy-config" onClick={exportConfig}>
             Export
@@ -315,10 +396,21 @@ export default function App() {
         {importError && <p className="config-error">{importError}</p>}
       </header>
 
-      {/* Bottom control bar. ScrollScene effects get a scroll visualiser
+      {docsOpen && (
+        <DocsPanel
+          entry={active}
+          values={values as Record<string, unknown>}
+          view={view}
+          animation={animation}
+          onClose={() => setDocsOpen(false)}
+        />
+      )}
+
+      {/* Bottom control bar. Scroll-driven effects (ScrollScene family, or any
+          effect with a ScrollAnimator channel active) get a scroll visualiser
           (slider + auto-play); everything else gets the camera Interact/View
           toggle. The two concerns never share a control. */}
-      {isScrollFamily ? (
+      {scrollDriven ? (
         <div className="mode-toggle glass scroll-sim" role="group" aria-label="Scroll">
           <button
             className={autoPlay ? 'mode active' : 'mode'}
