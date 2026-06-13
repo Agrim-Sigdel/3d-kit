@@ -36,8 +36,6 @@ export type Family =
   | 'FloatingObject'
   | 'ScrollScene'
 
-export type Difficulty = 'easy' | 'medium' | 'hard'
-
 /**
  * CodegenSpec — how an entry's flat leva values map back to real JSX.
  *
@@ -74,7 +72,6 @@ export interface GalleryEntry {
   /** Which master family this effect belongs to (drives sidebar grouping). */
   family: Family
   category: 'effects' | 'objects' | 'website' | 'postprocessing'
-  difficulty: Difficulty
   description: string
   /** leva schema — see https://github.com/pmndrs/leva */
   controls: Record<string, unknown>
@@ -84,6 +81,13 @@ export interface GalleryEntry {
   codegen?: CodegenSpec
   /** Per-prop descriptions + free-form notes for the docs panel / EFFECTS.md. */
   docs?: { props?: Record<string, string>; notes?: string }
+  /**
+   * Curated starting points (gallery-only). Each is a partial set of control
+   * values pushed into the live leva panel when clicked — a fast way to explore
+   * an effect's range without dragging every slider from the default. Keys not
+   * listed keep their current value; unknown keys are ignored by leva.
+   */
+  presets?: { name: string; params: Record<string, unknown> }[]
 }
 
 /**
@@ -96,9 +100,9 @@ export interface GalleryEntry {
 function surfaceEntry(
   material: SurfaceMaterial,
   opts: {
-    difficulty?: Difficulty
     description: string
     segments?: number
+    presets?: { name: string; params: Record<string, unknown> }[]
   },
 ): GalleryEntry {
   return {
@@ -106,7 +110,6 @@ function surfaceEntry(
     name: material.name,
     family: 'InteractiveSurface',
     category: 'effects',
-    difficulty: opts.difficulty ?? 'easy',
     description: opts.description,
     controls: material.controls ?? {},
     render: (v) => (
@@ -117,6 +120,7 @@ function surfaceEntry(
       kind: 'surface',
       fixedProps: opts.segments !== undefined ? { segments: String(opts.segments) } : undefined,
     },
+    presets: opts.presets,
     docs: material.docs ? { props: material.docs } : undefined,
   }
 }
@@ -127,7 +131,6 @@ export const registry: GalleryEntry[] = [
     name: 'Particle Field',
     family: 'ParticleField',
     category: 'effects',
-    difficulty: 'easy',
     description: 'A configurable GPU point cloud. Ambient atmosphere for any scene.',
     controls: {
       Cloud: folder({
@@ -149,6 +152,11 @@ export const registry: GalleryEntry[] = [
     },
     render: (v) => <ParticleField {...(v as any)} />,
     codegen: { component: 'ParticleField', kind: 'props' },
+    presets: [
+      { name: 'Starfield', params: { count: 12000, radius: 8, distribution: 'shell', color: '#cfe2ff', size: 0.02, glow: true, speed: 0.02, tumble: 0.1 } },
+      { name: 'Embers', params: { count: 2000, radius: 3, distribution: 'disc', color: '#ff8a3d', size: 0.06, glow: true, speed: 0.15, tumble: 0.8 } },
+      { name: 'Nebula', params: { count: 18000, radius: 6, distribution: 'sphere', color: '#a07bff', size: 0.05, opacity: 0.6, glow: true, speed: 0.04, tumble: 0.5 } },
+    ],
     docs: {
       props: {
         count: 'How many points are in the cloud',
@@ -169,7 +177,6 @@ export const registry: GalleryEntry[] = [
     name: 'Ripple Shader',
     family: 'InteractiveSurface',
     category: 'effects',
-    difficulty: 'easy',
     description: 'A cursor-reactive GLSL plane. Great as a website hero backdrop.',
     controls: {
       Color: folder({
@@ -185,6 +192,11 @@ export const registry: GalleryEntry[] = [
     },
     render: (v) => <RippleShader {...(v as any)} />,
     codegen: { component: 'RippleShader', kind: 'props' },
+    presets: [
+      { name: 'Calm pool', params: { colorA: '#06121f', colorB: '#4fc3ff', frequency: 22, speed: 1, falloff: 1.1, intensity: 0.6 } },
+      { name: 'Neon', params: { colorA: '#0a0020', colorB: '#ff3df0', frequency: 64, speed: 4, falloff: 0.7, intensity: 1.6 } },
+      { name: 'Sonar', params: { colorA: '#001410', colorB: '#5fffc1', frequency: 90, speed: 2.5, falloff: 0.5, intensity: 1.2 } },
+    ],
     docs: {
       props: {
         colorA: 'Base color of the plane',
@@ -202,7 +214,6 @@ export const registry: GalleryEntry[] = [
     name: 'Floating Object',
     family: 'FloatingObject',
     category: 'objects',
-    difficulty: 'easy',
     description: 'Idle float + spin with a hover pop. Every aspect configurable.',
     controls: {
       ...geometryGroup('torusKnot'),
@@ -217,6 +228,11 @@ export const registry: GalleryEntry[] = [
     },
     render: (v) => <FloatingObject {...(v as any)} />,
     codegen: { component: 'FloatingObject', kind: 'props' },
+    presets: [
+      { name: 'Gold idol', params: { shape: 'torusKnot', color: '#ffb43d', roughness: 0.2, metalness: 0.9, speed: 0.6, amplitude: 0.2, spin: 0.5, hoverScale: 1.2 } },
+      { name: 'Crystal', params: { shape: 'icosahedron', color: '#9fe8ff', roughness: 0, metalness: 0.1, emissive: '#1b5e7a', emissiveIntensity: 0.6, flatShading: true, speed: 1.2, amplitude: 0.4, spin: 1.5 } },
+      { name: 'Wire', params: { shape: 'dodecahedron', color: '#5fa8ff', wireframe: true, speed: 1, amplitude: 0.3, spin: 2, hoverScale: 1.4 } },
+    ],
     docs: {
       props: {
         shape: 'Which primitive geometry to float',
@@ -244,7 +260,6 @@ export const registry: GalleryEntry[] = [
     name: 'Scroll Scene',
     family: 'ScrollScene',
     category: 'website',
-    difficulty: 'medium',
     description:
       'Binds page scroll to a 3D transform. (Scroll the page to see it drive.)',
     controls: {
@@ -276,7 +291,6 @@ export const registry: GalleryEntry[] = [
     name: 'Post FX',
     family: 'PostFX',
     category: 'postprocessing',
-    difficulty: 'medium',
     description: 'Composable bloom / vignette / grain. Add as the last Stage child.',
     controls: {
       bloom: { value: 1.2, min: 0, max: 3, step: 0.1 },
@@ -297,6 +311,11 @@ export const registry: GalleryEntry[] = [
       siblingsCode: '<FloatingObject color="#88ddff" />\n<ParticleField count={1500} radius={5} />',
       extraImports: ['FloatingObject', 'ParticleField'],
     },
+    presets: [
+      { name: 'Subtle', params: { bloom: 0.5, bloomThreshold: 0.6, vignette: 0.3, noise: 0 } },
+      { name: 'Dreamy', params: { bloom: 2.2, bloomThreshold: 0.25, vignette: 0.6, noise: 0.04 } },
+      { name: 'Film', params: { bloom: 0.8, bloomThreshold: 0.5, vignette: 0.9, noise: 0.18 } },
+    ],
     docs: {
       props: {
         bloom: 'Bloom (glow) strength on bright areas',
@@ -313,12 +332,22 @@ export const registry: GalleryEntry[] = [
   // module + this single call. No new component, no plumbing.
   surfaceEntry(glassmorphism, {
     description: 'Frosted translucent glass with an animated frost and cursor sheen.',
+    presets: [
+      { name: 'Clear', params: { tint: '#cfe6ff', opacity: 0.35, blobScale: 0.8 } },
+      { name: 'Frosted', params: { tint: '#9ec5ff', opacity: 0.7, blobScale: 2.6 } },
+      { name: 'Amber', params: { tint: '#ffd9a0', opacity: 0.6, blobScale: 1.4 } },
+    ],
   }),
   surfaceEntry(thermalVision, {
     description: 'Thermal heatmap shading; the cursor adds a hot spot.',
   }),
   surfaceEntry(iridescent, {
     description: 'Oil-slick / soap-bubble shimmer that shifts hue with cursor + time.',
+    presets: [
+      { name: 'Soap bubble', params: { bands: 4, shiftSpeed: 0.3 } },
+      { name: 'Beetle shell', params: { bands: 10, shiftSpeed: 0.6 } },
+      { name: 'Still', params: { bands: 6, shiftSpeed: 0 } },
+    ],
   }),
 
   // ── InstancedGrid variant ──
@@ -327,7 +356,6 @@ export const registry: GalleryEntry[] = [
     name: 'Orbit Layout',
     family: 'InstancedGrid',
     category: 'objects',
-    difficulty: 'medium',
     description:
       'Hundreds of instances on nested orbiting shells in a single draw call. Cursor nudges the cloud.',
     controls: {
@@ -376,6 +404,11 @@ export const registry: GalleryEntry[] = [
       layoutFactory: 'orbitLayout',
       layoutKeys: ['count', 'shells', 'radius', 'spacing', 'speed', 'cursorPush'],
     },
+    presets: [
+      { name: 'Atom', params: { count: 800, shells: 3, radius: 1.2, spacing: 0.8, speed: 1.5, shape: 'sphere', instanceSize: 0.1, color: '#5fffc1', emissive: '#0a3a2a', emissiveIntensity: 0.5 } },
+      { name: 'Dense swarm', params: { count: 4000, shells: 10, radius: 1, spacing: 0.4, speed: 0.6, cursorPush: 1.2, shape: 'box', instanceSize: 0.06, color: '#7daacb' } },
+      { name: 'Gold rings', params: { count: 1200, shells: 6, radius: 1.6, spacing: 0.5, speed: 1, shape: 'octahedron', instanceSize: 0.14, color: '#ffb43d', metalness: 0.9, roughness: 0.2 } },
+    ],
     docs: {
       props: {
         count: 'Total number of instances (one draw call)',

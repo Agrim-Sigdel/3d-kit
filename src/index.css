@@ -159,6 +159,87 @@ body,
   margin-bottom: 6px;
   border-bottom: 1px solid var(--glass-border);
 }
+
+/* ── Sidebar collapse (desktop) ────────────────────────────────── */
+/* Chevron glyph: a rotated CSS box-border arrow, reused by both buttons. */
+.chevron {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+}
+.chevron.left {
+  transform: rotate(135deg);
+}
+.chevron.right {
+  transform: rotate(-45deg);
+}
+
+.sidebar-collapse {
+  margin-left: auto;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: var(--glass-highlight);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.sidebar-collapse:hover {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+.sidebar-collapse:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The "show sidebar" rail, pinned to the left edge, only when collapsed. */
+.sidebar-rail {
+  display: none;
+  position: absolute;
+  z-index: 30;
+  top: 20px;
+  left: 20px;
+  width: 34px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.sidebar-rail:hover {
+  color: var(--text);
+}
+.sidebar-rail:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Collapsed state (desktop only — phones use the off-canvas drawer instead).
+   Slide the sidebar out, reveal the rail, and reclaim the header's left edge. */
+@media (min-width: 721px) {
+  .app.sidebar-collapsed .sidebar {
+    transform: translateX(calc(-100% - 24px));
+    pointer-events: none;
+  }
+  .app.sidebar-collapsed .sidebar-rail {
+    display: grid;
+  }
+  .app.sidebar-collapsed .preview-dock {
+    left: 68px;
+  }
+  .app.sidebar-collapsed .docs-panel {
+    left: 68px;
+  }
+}
 .logo {
   font-weight: 800;
   font-size: 24px;
@@ -319,15 +400,66 @@ body,
   text-shadow: 0 0 12px var(--accent);
 }
 
-/* ── Header ────────────────────────────────────────────────────── */
-
-.preview-header {
+/* ── Info + actions dock ───────────────────────────────────────── */
+/* Compact by default: only name + description show. Hover / focus-within (or
+   the More menu being open) reveals the meta chips, presets, and the actions
+   card. This keeps the live scene unobstructed until you reach for the dock. */
+.preview-dock {
   position: absolute;
   z-index: 10;
   top: 20px;
   left: 292px;
+  width: 360px;
+  max-width: calc(100vw - 320px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-header {
   padding: 14px 20px;
-  max-width: 420px;
+}
+/* Meta chips and presets are hidden until the dock is engaged. */
+.header-meta,
+.preview-header .presets {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin: 0;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.25s ease;
+}
+.actions-card {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  /* Tucked away until hover. */
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.preview-dock:hover .header-meta,
+.preview-dock:focus-within .header-meta,
+.preview-dock.is-open .header-meta {
+  max-height: 40px;
+  opacity: 1;
+  margin-bottom: 4px;
+}
+.preview-dock:hover .preview-header .presets,
+.preview-dock:focus-within .preview-header .presets,
+.preview-dock.is-open .preview-header .presets {
+  max-height: 80px;
+  opacity: 1;
+  margin-top: 12px;
+}
+.preview-dock:hover .actions-card,
+.preview-dock:focus-within .actions-card,
+.preview-dock.is-open .actions-card {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 .chip {
   display: inline-block;
@@ -341,10 +473,39 @@ body,
   padding: 3px 9px;
   border-radius: 99px;
 }
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .preview-header h2 {
-  margin: 9px 0 0;
+  margin: 0;
   font-size: 19px;
   font-weight: 700;
+}
+/* Explicit toggle to reveal the dock. Always available as a click target
+   (desktop also reveals on hover; touch relies on this tap). */
+.dock-toggle {
+  display: grid;
+  flex: none;
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  background: var(--glass-highlight);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.dock-toggle:hover {
+  color: var(--text);
+}
+.chevron.down {
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+.chevron.up {
+  transform: rotate(-135deg) translate(-1px, -1px);
 }
 .preview-header p {
   margin: 5px 0 0;
@@ -352,10 +513,10 @@ body,
   line-height: 1.45;
   color: var(--muted);
 }
-.config-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
+.icon-btn {
+  padding: 6px 0;
+  width: 28px;
+  text-align: center;
 }
 .config-error {
   margin: 8px 0 0;
@@ -377,6 +538,231 @@ body,
 .copy-config:hover {
   background: var(--accent);
   color: #fff;
+}
+/* Primary action stands out: solid accent fill instead of the soft tint. */
+.copy-config.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.copy-config.primary:hover {
+  background: #7ab8ff;
+  border-color: #7ab8ff;
+}
+
+/* ── "More" actions menu ───────────────────────────────────────── */
+.more {
+  position: relative;
+  display: inline-flex;
+}
+.more-btn {
+  font-size: 14px;
+  line-height: 1;
+  padding: 6px 10px;
+}
+.more-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 150px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: onboard-in 0.14s ease both;
+}
+.more-menu button {
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 8px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.more-menu button:hover {
+  background: var(--glass-highlight);
+}
+.more-menu button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ── Focus rings (keyboard) ────────────────────────────────────── */
+/* Visible only for keyboard users; mouse clicks don't trigger a ring. */
+.copy-config:focus-visible,
+.item:focus-visible,
+.mode:focus-visible,
+.preset-chip:focus-visible,
+.search input:focus-visible,
+.nav-toggle:focus-visible,
+.demo-link:focus-visible,
+.search-clear:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Preset chips ──────────────────────────────────────────────── */
+.presets {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.presets-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.preset-chip {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--glass-highlight);
+  border: 1px solid var(--glass-border);
+  padding: 5px 11px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.preset-chip:hover {
+  background: var(--accent-soft);
+  border-color: rgba(95, 168, 255, 0.45);
+  color: #fff;
+}
+
+/* ── Screen-reader-only live region ────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Onboarding toast ──────────────────────────────────────────── */
+.onboard {
+  position: absolute;
+  z-index: 35;
+  left: 288px;
+  bottom: 20px;
+  max-width: 320px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  animation: onboard-in 0.4s ease both;
+}
+/* When the sidebar is collapsed the toast can hug the left edge. */
+.app.sidebar-collapsed .onboard {
+  left: 20px;
+}
+@keyframes onboard-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.onboard-body {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.onboard-body strong {
+  color: var(--text);
+  font-weight: 700;
+}
+.onboard-close {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.onboard-close:hover {
+  color: var(--text);
+}
+
+/* ── Keyboard shortcuts overlay ────────────────────────────────── */
+.shortcuts-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 5, 12, 0.5);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: onboard-in 0.18s ease both;
+}
+.shortcuts {
+  width: min(420px, calc(100vw - 40px));
+  padding: 20px 22px;
+}
+.shortcuts-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.shortcuts-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+.shortcuts-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.shortcuts-list li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--glass-border);
+  font-size: 13px;
+}
+.shortcuts-list li:last-child {
+  border-bottom: none;
+}
+.shortcuts-keys {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  min-width: 92px;
+}
+.shortcuts-label {
+  color: var(--muted);
+}
+kbd {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  color: var(--text);
+  background: var(--glass-highlight);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 2px 7px;
+  min-width: 16px;
+  text-align: center;
 }
 
 /* ── Docs panel ────────────────────────────────────────────────── */
@@ -481,50 +867,16 @@ body,
 }
 
 @media (max-width: 720px) {
+  /* Full-width sheet pinned above leva. !important defeats the desktop
+     sidebar-collapsed left/width overrides, which otherwise win here. */
   .docs-panel {
-    left: 12px;
+    left: 12px !important;
     right: 12px;
-    width: auto;
-    top: 150px;
-    bottom: 80px;
+    width: auto !important;
+    top: auto;
+    bottom: 130px;
+    max-height: 52vh;
   }
-}
-
-/* Difficulty badges + nav dots */
-.chip.diff {
-  margin-left: 6px;
-  text-transform: capitalize;
-}
-.diff-easy {
-  --d: #5fe0a8;
-}
-.diff-medium {
-  --d: #ffcf5f;
-}
-.diff-hard {
-  --d: #ff7a7a;
-}
-.chip.diff-easy,
-.chip.diff-medium,
-.chip.diff-hard {
-  color: var(--d);
-  background: color-mix(in srgb, var(--d) 16%, transparent);
-  border-color: color-mix(in srgb, var(--d) 40%, transparent);
-}
-.dot.diff-easy {
-  background: var(--d);
-}
-.dot.diff-medium {
-  background: var(--d);
-}
-.dot.diff-hard {
-  background: var(--d);
-}
-.item.active .dot.diff-easy,
-.item.active .dot.diff-medium,
-.item.active .dot.diff-hard {
-  box-shadow: 0 0 8px var(--d);
-  opacity: 1;
 }
 
 /* ── Mode toggle (camera vs. effect input) ─────────────────────── */
@@ -567,6 +919,18 @@ body,
   letter-spacing: 0.3px;
 }
 
+/* ── leva control panel placement ──────────────────────────────── */
+/* We own leva's position via this wrapper (leva is rendered with `fill`).
+   Desktop: docked top-right. The width matches leva's default panel. */
+.leva-dock {
+  position: fixed;
+  /* Above the info/actions dock so the controls are never blocked by it. */
+  z-index: 30;
+  top: 20px;
+  right: 20px;
+  width: 280px;
+}
+
 /* Scroll visualiser slider */
 .scroll-sim {
   min-width: 320px;
@@ -602,10 +966,21 @@ body,
   .sidebar {
     width: 216px;
   }
-  .preview-header {
+  .preview-dock {
     left: 252px;
-    right: 20px;
-    max-width: none;
+    width: 320px;
+    max-width: calc(100vw - 540px);
+  }
+  /* Keep the docs panel aligned with the narrowed header and clear of leva
+     (which docks top-right) by capping its width on this band. */
+  .docs-panel {
+    left: 252px;
+    width: min(440px, calc(100vw - 560px));
+  }
+  /* Clear leva (top-right) by lifting the toast above the bottom controls. */
+  .onboard {
+    bottom: 84px;
+    max-width: 280px;
   }
 }
 
@@ -634,24 +1009,91 @@ body,
     display: block;
   }
 
+  /* Mutually exclusive on mobile: when the nav drawer is open, get the
+     controls (leva), the info dock and the bottom bar out of the way so the
+     drawer owns the screen. Tapping the scrim or a component closes it again
+     (App clears navOpen), which restores them. */
+  .app.nav-open .leva-dock,
+  .app.nav-open .preview-dock,
+  .app.nav-open .mode-toggle,
+  .app.nav-open .onboard {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  /* Keep the hamburger tappable above the open drawer so it doubles as close. */
+  .nav-toggle {
+    z-index: 45;
+  }
+
   /* Header: full-width band at the top, clearing the hamburger on the left. */
-  .preview-header {
+  .preview-dock {
     top: 14px;
     left: 76px;
     right: 14px;
-    bottom: auto;
+    width: auto;
     max-width: none;
+  }
+  .preview-header {
     padding: 12px 16px;
   }
   .preview-header h2 {
     font-size: 17px;
   }
-  /* Keep the description to two lines so the band stays compact. */
+  /* Lift leva out of the top-right corner (where it overlapped the dock) to
+     sit just above the bottom control bar, clear of the dock. */
+  .leva-dock {
+    top: auto;
+    bottom: 70px;
+    right: 14px;
+    left: 14px;
+    width: auto;
+  }
+  /* Phones have no hover: the dock is collapsed (name only) until the user
+     taps the toggle. Neutralise the desktop :hover/:focus-within reveals so
+     only the explicit .dock-open state shows the meta, presets and actions. */
+  .dock-toggle {
+    display: grid;
+  }
+  .preview-dock:hover .header-meta,
+  .preview-dock:focus-within .header-meta,
+  .preview-dock:hover .preview-header .presets,
+  .preview-dock:focus-within .preview-header .presets {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+  }
+  .preview-dock:hover .actions-card,
+  .preview-dock:focus-within .actions-card {
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+  }
+  /* The explicit open state wins. */
+  .preview-dock.dock-open .header-meta {
+    max-height: 40px;
+    opacity: 1;
+    margin-bottom: 4px;
+  }
+  .preview-dock.dock-open .preview-header .presets {
+    max-height: 120px;
+    opacity: 1;
+    margin-top: 12px;
+  }
+  .preview-dock.dock-open .actions-card {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  /* Description: two lines when collapsed, full when open. */
   .preview-header p {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  .preview-dock.dock-open .preview-header p {
+    -webkit-line-clamp: unset;
   }
 
   /* Mode toggle / scroll sim: full-width pinned to the bottom. */
@@ -670,6 +1112,18 @@ body,
   }
   .scroll-sim .hint {
     display: block;
+  }
+  /* Toast: full-width above the bottom control bar so they don't overlap. */
+  .onboard {
+    left: 14px;
+    right: 14px;
+    bottom: 76px;
+    max-width: none;
+  }
+  /* Mobile uses the hamburger drawer, not the desktop collapse rail/toggle. */
+  .sidebar-collapse,
+  .sidebar-rail {
+    display: none !important;
   }
 }
 

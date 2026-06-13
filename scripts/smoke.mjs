@@ -23,11 +23,28 @@ page.on("pageerror", (e) => errors.push(String(e)))
 await page.goto(URL, { waitUntil: "networkidle0", timeout: 30000 })
 await new Promise(r => setTimeout(r, 800))
 
+// The sidebar is collapsed by default now — expand it so the effect list is
+// clickable. The "show sidebar" rail is only present while collapsed.
+await page.evaluate(() => {
+  const rail = document.querySelector(".sidebar-rail")
+  if (rail) rail.click()
+})
+await new Promise(r => setTimeout(r, 600))
+// Wait for the effect list to actually render before reading it.
+await page.waitForSelector(".item", { timeout: 5000 })
+
 const items = await page.$$eval(".item", els => els.map(e => e.textContent.trim()))
 console.log("Found", items.length, "effects")
 
-// Open the Docs panel once; it stays open across effect switches, so every
-// effect also exercises the live code generator (an empty snippet = failure).
+// The info/actions dock is collapsed by default; the Docs button lives in the
+// actions card revealed by the dock toggle. Open it once — the Docs panel then
+// stays open across effect switches, exercising the live code generator
+// (an empty snippet = failure) for every effect.
+await page.evaluate(() => {
+  const t = document.querySelector(".dock-toggle")
+  if (t) t.click()
+})
+await new Promise(r => setTimeout(r, 250))
 await page.evaluate(() => {
   const btn = [...document.querySelectorAll(".copy-config")].find(b => b.textContent.trim() === "Docs")
   if (btn) btn.click()

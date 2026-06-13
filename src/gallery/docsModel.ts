@@ -1,4 +1,4 @@
-import type { Difficulty, Family, GalleryEntry } from './registry'
+import type { Family, GalleryEntry } from './registry'
 import { flattenSchema, schemaDefaults, type FlatControl } from './schema'
 import { generateCode } from './codegen'
 
@@ -20,7 +20,6 @@ export interface EffectDoc {
   id: string
   name: string
   family: Family
-  difficulty: Difficulty
   description: string
   notes?: string
   props: DocProp[]
@@ -38,7 +37,6 @@ export function buildEffectDoc(entry: GalleryEntry): EffectDoc {
     id: entry.id,
     name: entry.name,
     family: entry.family,
-    difficulty: entry.difficulty,
     description: entry.description,
     notes: entry.docs?.notes,
     props,

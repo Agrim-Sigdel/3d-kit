@@ -19,7 +19,10 @@ import { toO3SConfig, type O3SConfig } from './gallery/O3SElement'
 import { levaTheme } from './gallery/levaTheme'
 import { viewGroup, animationGroup } from './gallery/controls'
 import { generateCode, DEFAULT_ANIMATION, type AnimationValues } from './gallery/codegen'
+import { schemaDefaults } from './gallery/schema'
 import { DocsPanel } from './gallery/DocsPanel'
+import { DEFAULT_VIEW } from '@o3s/lib'
+import { OnboardingToast, ShortcutsOverlay } from './gallery/Overlays'
 
 /**
  * Gallery shell (Layer 4) — glassmorphism.
@@ -33,20 +36,41 @@ export default function App() {
   const [activeId, setActiveId] = useState(registry[0].id)
   const active = registry.find((e) => e.id === activeId) ?? registry[0]
 
-  // Sidebar search — filter the component list by name / description / family /
-  // difficulty. Case-insensitive, whitespace-trimmed.
+  // Sidebar search — filter the component list by name / description / family.
+  // Case-insensitive, whitespace-trimmed.
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
   const matches = (e: (typeof registry)[number]) =>
     !q ||
     e.name.toLowerCase().includes(q) ||
     e.description.toLowerCase().includes(q) ||
-    e.family.toLowerCase().includes(q) ||
-    e.difficulty.includes(q)
+    e.family.toLowerCase().includes(q)
   const filtered = registry.filter(matches)
 
   // Mobile: the sidebar is an off-canvas drawer toggled by a hamburger.
   const [navOpen, setNavOpen] = useState(false)
+
+  // Desktop: the sidebar can be collapsed to reclaim the full stage. Persisted
+  // so the choice sticks across reloads. (Mobile uses navOpen instead.)
+  // Default collapsed so the live scene is front-and-centre on first load;
+  // a stored '0' (user explicitly expanded) overrides that default.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('o3s.gallery.sidebarCollapsed') !== '0'
+    } catch {
+      return true
+    }
+  })
+  const toggleSidebar = () =>
+    setSidebarCollapsed((c) => {
+      const next = !c
+      try {
+        localStorage.setItem('o3s.gallery.sidebarCollapsed', next ? '1' : '0')
+      } catch {
+        // ignore — persistence is best-effort
+      }
+      return next
+    })
 
   // Per-effect docs panel (props table + live usage snippet).
   const [docsOpen, setDocsOpen] = useState(false)
@@ -76,12 +100,19 @@ export default function App() {
   // App-level Camera store — persists across effect switches, drives the
   // CameraRig's declarative view, and is captured by Copy code / Copy JSON.
   // Hand-orbiting in View mode writes back into these sliders (two-way sync).
-  const [viewValues, setViewValues] = useControls('Camera', () => viewGroup())
+  // Camera and Animation are collapsed by default so opening the controls
+  // panel shows the component's own settings first; these app-level folders
+  // are there when you want them but don't bury the per-effect knobs.
+  const [viewValues, setViewValues] = useControls('Camera', () => viewGroup(), {
+    collapsed: true,
+  })
   const view: ViewAngle = viewValues
 
   // App-level Animation store — the ScrollAnimator wrapper around EVERY
   // effect. All channels default to off, so it's a passthrough until used.
-  const [animRaw, setAnimValues] = useControls('Animation', () => animationGroup())
+  const [animRaw, setAnimValues] = useControls('Animation', () => animationGroup(), {
+    collapsed: true,
+  })
   const animation = animRaw as unknown as AnimationValues & {
     ease: EaseName
     entrance: EntranceMode
@@ -190,6 +221,58 @@ export default function App() {
     }
   }
 
+  // "Reset" — restore the active effect's control defaults plus the default
+  // camera view and a passthrough animation. Reuses the same set() bridge as
+  // Import, so the leva panel and the scene snap back together.
+  const resetConfig = () => {
+    setImportError(null)
+    setValues(schemaDefaults(active.controls) as never)
+    setViewValues({
+      azimuth: DEFAULT_VIEW.azimuth,
+      elevation: DEFAULT_VIEW.elevation,
+      distance: DEFAULT_VIEW.distance,
+    })
+    setAnimValues({ ...DEFAULT_ANIMATION } as never)
+  }
+
+  // "Apply preset" — push a curated partial param set into the live panel.
+  const applyPreset = (params: Record<string, unknown>) => setValues(params as never)
+
+  // Keyboard shortcuts cheat-sheet overlay.
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+
+  // On touch / phones there's no hover, so the dock (info + actions) is
+  // revealed by an explicit toggle instead. Desktop ignores this and uses
+  // :hover / :focus-within (see index.css).
+  const [dockOpen, setDockOpen] = useState(false)
+  // Collapse the dock again whenever the active effect changes, so switching
+  // components on mobile returns to the compact name-only state.
+  useEffect(() => {
+    setDockOpen(false)
+  }, [activeId])
+
+  // "More" menu (Copy JSON / Export / Import) — keeps the header uncluttered.
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!moreOpen) return
+    const onDoc = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false)
+    }
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMoreOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onEsc)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [moreOpen])
+
+  // Search box ref so "/" can focus it from anywhere.
+  const searchRef = useRef<HTMLInputElement>(null)
+
   // ScrollScene effects are driven by scroll progress, not the cursor — so the
   // Interact/View toggle is meaningless for them. Instead we visualise their
   // scroll range with a slider + auto-play that drives the scroll override.
@@ -251,8 +334,62 @@ export default function App() {
     }
   }, [isScrollFamily])
 
+  // Gallery navigation shortcuts: arrows / j / k walk the FILTERED list, "/"
+  // focuses search, "?" toggles the cheat-sheet, Esc clears search / closes
+  // panels. Suppressed while typing in a field so it never hijacks input.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null
+      const typing =
+        el &&
+        (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
+
+      if (e.key === '/' && !typing) {
+        e.preventDefault()
+        searchRef.current?.focus()
+        return
+      }
+      if (e.key === '?') {
+        e.preventDefault()
+        setShortcutsOpen((o) => !o)
+        return
+      }
+      if (e.key === '[' && !typing) {
+        e.preventDefault()
+        toggleSidebar()
+        return
+      }
+      if (e.key === 'Escape') {
+        if (shortcutsOpen) setShortcutsOpen(false)
+        else if (docsOpen) setDocsOpen(false)
+        else if (query) setQuery('')
+        else if (typing) (el as HTMLInputElement).blur()
+        return
+      }
+
+      // List navigation — only when not typing, and the active item is in view.
+      const isPrev = e.key === 'ArrowUp' || (!typing && e.key === 'k')
+      const isNext = e.key === 'ArrowDown' || (!typing && e.key === 'j')
+      if ((isPrev || isNext) && filtered.length > 0) {
+        e.preventDefault()
+        const idx = filtered.findIndex((x) => x.id === activeId)
+        const base = idx === -1 ? 0 : idx
+        const next = isNext
+          ? (base + 1) % filtered.length
+          : (base - 1 + filtered.length) % filtered.length
+        setActiveId(filtered[next].id)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [filtered, activeId, query, docsOpen, shortcutsOpen])
+
   return (
-    <div className="app">
+    <div
+      className={
+        'app' + (sidebarCollapsed ? ' sidebar-collapsed' : '') + (navOpen ? ' nav-open' : '')
+      }
+    >
       {/* Full-bleed live scene — the thing every glass panel blurs. */}
       <div className="stage-layer">
         <Stage background={null}>
@@ -294,11 +431,30 @@ export default function App() {
       {/* Tap-away scrim behind the open drawer (mobile only). */}
       {navOpen && <div className="nav-scrim" onClick={() => setNavOpen(false)} aria-hidden />}
 
+      {/* Desktop "show sidebar" rail — only visible while collapsed. */}
+      <button
+        className="sidebar-rail glass"
+        onClick={toggleSidebar}
+        aria-label="Show sidebar"
+        title="Show sidebar"
+      >
+        <span className="chevron right" aria-hidden />
+      </button>
+
       {/* Floating glass sidebar — off-canvas drawer on mobile. */}
       <aside className={navOpen ? 'sidebar glass open' : 'sidebar glass'}>
         <div className="brand">
           <span className="logo">O3S</span>
           <span className="tagline">3d&#8202;kit</span>
+          {/* Desktop-only collapse toggle. */}
+          <button
+            className="sidebar-collapse"
+            onClick={toggleSidebar}
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+          >
+            <span className="chevron left" aria-hidden />
+          </button>
         </div>
 
         {/* Search / filter the component list. */}
@@ -308,8 +464,9 @@ export default function App() {
             <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
           <input
+            ref={searchRef}
             type="search"
-            placeholder="Search components"
+            placeholder="Search  ( / )"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search components"
@@ -321,7 +478,7 @@ export default function App() {
           )}
         </div>
 
-        <nav className="nav">
+        <nav className="nav" role="listbox" aria-label="Components">
           {families.length === 0 ? (
             <p className="nav-empty">No components match &ldquo;{query}&rdquo;.</p>
           ) : (
@@ -333,13 +490,15 @@ export default function App() {
                   .map((e) => (
                     <button
                       key={e.id}
+                      role="option"
+                      aria-selected={e.id === activeId}
                       className={e.id === activeId ? 'item active' : 'item'}
                       onClick={() => {
                         setActiveId(e.id)
                         setNavOpen(false)
                       }}
                     >
-                      <span className={`dot diff-${e.difficulty}`} />
+                      <span className="dot" />
                       {e.name}
                     </button>
                   ))}
@@ -350,6 +509,9 @@ export default function App() {
 
         <footer>
           {q ? `${filtered.length} of ${registry.length}` : `${registry.length} effects · 6 families`}
+          <Link className="demo-link" to="/">
+            Home: easy-3dkit
+          </Link>
           <Link className="demo-link" to="/studio">
             Demo site: Novaforge
           </Link>
@@ -359,28 +521,116 @@ export default function App() {
         </footer>
       </aside>
 
-      {/* Floating glass header */}
-      <header className="preview-header glass">
-        <span className="chip">{active.family}</span>
-        <span className={`chip diff diff-${active.difficulty}`}>{active.difficulty}</span>
-        <h2>{active.name}</h2>
-        <p>{active.description}</p>
-        <div className="config-actions">
-          <button className="copy-config" onClick={copyCode}>
+      {/* Floating info + actions dock. Compact by default (just the name and
+          description); hover or focus reveals chips, presets, and the action
+          card. The dock stays expanded while the More menu is open. */}
+      <div
+        className={
+          'preview-dock' +
+          (moreOpen || dockOpen ? ' is-open' : '') +
+          (dockOpen ? ' dock-open' : '')
+        }
+      >
+        <header className="preview-header glass">
+          <div className="header-meta">
+            <span className="chip">{active.family}</span>
+          </div>
+          <div className="header-title">
+            <h2>{active.name}</h2>
+            {/* Touch toggle: phones have no hover, so reveal the dock on tap. */}
+            <button
+              className="dock-toggle"
+              onClick={() => setDockOpen((o) => !o)}
+              aria-expanded={dockOpen}
+              aria-label={dockOpen ? 'Hide details' : 'Show details'}
+            >
+              <span className={dockOpen ? 'chevron up' : 'chevron down'} aria-hidden />
+            </button>
+          </div>
+          <p>{active.description}</p>
+
+          {active.presets && active.presets.length > 0 && (
+            <div className="presets" role="group" aria-label="Presets">
+              <span className="presets-label">Presets</span>
+              {active.presets.map((p) => (
+                <button
+                  key={p.name}
+                  className="preset-chip"
+                  onClick={() => applyPreset(p.params)}
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </header>
+
+        {/* Separate actions card. */}
+        <div className="actions-card glass">
+          <button className="copy-config primary" onClick={copyCode}>
             {copiedCode ? 'Copied' : 'Copy code'}
-          </button>
-          <button className="copy-config" onClick={copyConfig}>
-            {copied ? 'Copied' : 'Copy JSON'}
           </button>
           <button className="copy-config" onClick={() => setDocsOpen((o) => !o)}>
             Docs
           </button>
-          <button className="copy-config" onClick={exportConfig}>
-            Export
+          <button className="copy-config" onClick={resetConfig}>
+            Reset
           </button>
-          <button className="copy-config" onClick={() => importInputRef.current?.click()}>
-            Import
+
+          {/* Everything secondary folds into a "More" menu. */}
+          <div className="more" ref={moreRef}>
+            <button
+              className="copy-config more-btn"
+              onClick={() => setMoreOpen((o) => !o)}
+              aria-haspopup="menu"
+              aria-expanded={moreOpen}
+              aria-label="More actions"
+              title="More actions"
+            >
+              &#8943;
+            </button>
+            {moreOpen && (
+              <div className="more-menu glass" role="menu">
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    copyConfig()
+                    setMoreOpen(false)
+                  }}
+                >
+                  {copied ? 'Copied JSON' : 'Copy JSON'}
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    exportConfig()
+                    setMoreOpen(false)
+                  }}
+                >
+                  Export config
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    importInputRef.current?.click()
+                    setMoreOpen(false)
+                  }}
+                >
+                  Import config
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            className="copy-config icon-btn"
+            onClick={() => setShortcutsOpen(true)}
+            aria-label="Keyboard shortcuts"
+            title="Keyboard shortcuts"
+          >
+            ?
           </button>
+
           <input
             ref={importInputRef}
             type="file"
@@ -394,7 +644,12 @@ export default function App() {
           />
         </div>
         {importError && <p className="config-error">{importError}</p>}
-      </header>
+      </div>
+
+      {/* Announce the active component to assistive tech on change. */}
+      <div className="sr-only" role="status" aria-live="polite">
+        {active.name}
+      </div>
 
       {docsOpen && (
         <DocsPanel
@@ -450,15 +705,22 @@ export default function App() {
         </div>
       )}
 
-      {/* leva, themed to match the glass. Collapsed by default on phones so it
-          doesn't cover the header band; the key re-applies that on breakpoint
-          change. */}
-      <Leva
-        key={isCompact ? 'compact' : 'wide'}
-        theme={levaTheme}
-        titleBar={{ title: 'Controls' }}
-        collapsed={isCompact}
-      />
+      {/* leva, themed to match the glass, and wrapped in a container we own so
+          we control its placement (top-right on desktop, lifted above the
+          bottom bar on phones) instead of leva's default fixed corner. `fill`
+          makes the panel fill this wrapper. Collapsed by default. */}
+      <div className="leva-dock">
+        <Leva
+          key={isCompact ? 'compact' : 'wide'}
+          theme={levaTheme}
+          titleBar={{ title: 'Controls' }}
+          fill
+          collapsed
+        />
+      </div>
+
+      <OnboardingToast />
+      {shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}
     </div>
   )
 }

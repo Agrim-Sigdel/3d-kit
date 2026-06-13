@@ -543,7 +543,7 @@ export default function ShowcasePage() {
         >
           {theme === 'dark' ? 'Light mode' : 'Dark mode'}
         </button>
-        <Link className="sc-nav-cta" to="/">
+        <Link className="sc-nav-cta" to="/gallery">
           Open the gallery
         </Link>
       </nav>
@@ -595,10 +595,10 @@ export default function ShowcasePage() {
         <footer className="sc-footer">
           <h2>Build something glassy.</h2>
           <p>
-            <code>npm install easy-3dkit three @react-three/fiber @react-three/drei gsap</code>
+            <code>npm install easy-3dkit</code>
           </p>
           <div className="sc-footer-links">
-            <Link to="/">Gallery</Link>
+            <Link to="/gallery">Gallery</Link>
             <Link to="/studio">Novaforge demo</Link>
             <a href="https://github.com/Agrim-Sigdel/3d-kit" target="_blank" rel="noreferrer">
               GitHub

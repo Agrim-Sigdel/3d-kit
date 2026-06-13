@@ -1,127 +1,178 @@
 /**
- * Novaforge Interactive — site copy and data.
+ * Kiln & Clay — site copy and data for the demo site.
  *
- * Pure content module: no React, no three.js. Copy rules: concrete over
- * evocative, numbers over adjectives, sentence case everywhere. The palette
- * is fixed site-wide (ember on graphite, steel as the cool counterpoint) —
- * games are differentiated by their shader art, not by per-game colors.
+ * A small wheel-thrown pottery studio. This is the demo that shows the kit
+ * driving a completely different kind of site than the library's own home
+ * page: warm, hand-made, editorial. Copy is written the way a real two-person
+ * workshop would write it — plain, specific, a little dry. No buzzwords, no
+ * "elevate your space," no exclamation marks doing the work of a sentence.
+ *
+ * Pure data module: no React, no three.js.
  */
 
-export interface Game {
+/** A piece in the current collection. Each card shows live 3D key art. */
+export interface Piece {
   id: string
-  title: string
-  tagline: string
-  description: string
-  genre: string
-  platforms: string
-  status: string
-  /** Which surface material the card's live key art uses (resolved in the page). */
-  art: 'heatHaze' | 'voronoiCells' | 'bioluminescent'
-  /** Per-game params for that material, tuned to the site palette. */
-  artParams: Record<string, unknown>
-}
-
-export const GAMES: Game[] = [
-  {
-    id: 'axiom-drift',
-    title: 'Axiom Drift',
-    tagline: 'Momentum is the whole game.',
-    description:
-      'A 12-player anti-gravity racer where the racing line is yours to draw: magnetic drift rails can be laid, stolen and broken mid-corner. Ninety-second laps, one global ladder, full cross-play.',
-    genre: 'Arcade racer',
-    platforms: 'PC / PS5 / Xbox',
-    status: 'Out now',
-    art: 'heatHaze',
-    artParams: { colorTop: '#0c0e12', colorBottom: '#ff6b3d', strength: 0.07, speed: 1.6, scale: 6 },
-  },
-  {
-    id: 'neon-requiem',
-    title: 'Neon Requiem',
-    tagline: 'A city that rebuilds itself around your choices.',
-    description:
-      'An action RPG set in Veiled Harbor, a vertical city where districts physically change as factions gain or lose ground. Real-time combat, a 40-hour campaign, and no morality meter — just consequences you can walk through.',
-    genre: 'Action RPG',
-    platforms: 'PC / PS5',
-    status: 'Coming 2027',
-    art: 'voronoiCells',
-    artParams: { scale: 7, speed: 0.35, lightRadius: 0.6, cellColor: '#e8a849', edgeColor: '#0c0e12' },
-  },
-  {
-    id: 'voidborn',
-    title: 'Voidborn',
-    tagline: 'Four-player horror where light is the resource.',
-    description:
-      'Co-op survival horror aboard the seed ship Demeter. Power is scarce, sound carries, and the creature hunting you remembers the tactics that worked against it last run.',
-    genre: 'Co-op horror',
-    platforms: 'PC',
-    status: 'In development',
-    art: 'bioluminescent',
-    artParams: { glow: '#7fa8a4', base: '#04060a', scale: 5, breath: 0.5, intensity: 1.2 },
-  },
-]
-
-export interface LoreBlock {
-  kicker: string
-  title: string
-  body: string
-}
-
-export const LORE: LoreBlock[] = [
-  {
-    kicker: 'The setting',
-    title: 'Three games, one timeline.',
-    body: 'Everything we ship takes place in the same fictional system, in the decades after a gate network called the Lattice was switched on. Axiom Drift is the boom years; Neon Requiem is the cities the boom built; Voidborn is what came back through the gates.',
-  },
-  {
-    kicker: 'Persistence',
-    title: 'What happens in one game is canon in the next.',
-    body: 'Season results in Axiom Drift decide which wrecks end up orbiting the gates. Those same wrecks are boardable salvage sites in Voidborn. The link is a shared world database, not a marketing line.',
-  },
-  {
-    kicker: 'The mystery',
-    title: 'One long question, answered together.',
-    body: 'A single storyline advances across all three games, moved forward by community discoveries rather than patch notes. Two of its five chapters have been solved since 2023.',
-  },
-  {
-    kicker: 'Right now',
-    title: 'Chapter three is open.',
-    body: 'The current chapter, Signal Verses, started in March 2026. The first clue was a corrupted lap ghost in Axiom Drift; where it leads is still unsolved.',
-  },
-]
-
-export interface TechPillar {
   name: string
+  /** One honest line about the piece. */
+  note: string
+  /** Longer description — how it's made, what it's for. */
+  body: string
+  clay: string
+  glaze: string
+  price: string
+  /** 'available' | 'made to order' | 'sold out' */
+  status: string
+  /** Which live 3D art the card uses (resolved in the page). */
+  art: 'cardflip' | 'morph' | 'popup' | 'portal' | 'explode' | 'spline'
+}
+
+export const PIECES: Piece[] = [
+  {
+    id: 'tide-bowl',
+    name: 'Tide Bowl',
+    note: 'The one we keep on the table at home.',
+    body: "A deep serving bowl thrown on the wheel and trimmed when it's leather-hard. Wide enough for a salad for four, heavy enough that it doesn't slide. The glaze pools a little darker where the wall meets the foot.",
+    clay: 'Stoneware',
+    glaze: 'Oxblood over cream',
+    price: '$68',
+    status: 'available',
+    art: 'morph',
+  },
+  {
+    id: 'morning-mug',
+    name: 'Morning Mug',
+    note: 'Holds a proper amount of coffee. Finally.',
+    body: 'A 14oz mug with a pulled handle that actually fits three fingers. We make these in small runs because pulling handles is the slow part and we refuse to cast them. No two handles are the same.',
+    clay: 'Stoneware',
+    glaze: 'Sand matte',
+    price: '$34',
+    status: 'made to order',
+    art: 'cardflip',
+  },
+  {
+    id: 'fold-vase',
+    name: 'Fold Vase',
+    note: 'Looks empty on purpose. Looks better with one stem.',
+    body: 'A tall bottle vase with a folded, faceted shoulder cut while the clay is still soft. Narrow neck so a single branch stands up straight instead of flopping. Fires to a quiet, chalky finish.',
+    clay: 'Porcelain blend',
+    glaze: 'Bare clay, waxed foot',
+    price: '$92',
+    status: 'available',
+    art: 'popup',
+  },
+  {
+    id: 'ring-plate',
+    name: 'Ring Plate',
+    note: 'For keys, rings, the small things you lose.',
+    body: 'A little catch-all dish, pressed rather than thrown, with a thumb-pushed rim. We started making these from the trimmings off bigger pots and they sold faster than anything else, so now they have their own slot in the kiln.',
+    clay: 'Reclaimed stoneware',
+    glaze: 'Wine speckle',
+    price: '$22',
+    status: 'available',
+    art: 'portal',
+  },
+  {
+    id: 'stack-set',
+    name: 'Stacking Set',
+    note: 'Four bowls that nest. Stops the cupboard war.',
+    body: 'A graduated set of four bowls thrown to nest inside each other within a millimetre or two — which, on the wheel, is harder than it sounds and took us most of a winter to get right. Sold as a set only.',
+    clay: 'Stoneware',
+    glaze: 'Cream, tan rims',
+    price: '$140',
+    status: 'made to order',
+    art: 'explode',
+  },
+  {
+    id: 'long-pour',
+    name: 'Long Pour Jug',
+    note: 'Pours without dribbling down the side. We checked.',
+    body: 'A water jug with a sharp, pulled spout and a high handle. We threw eleven of these before the spout stopped dripping, then kept the shape. Good for water, oil, or holding wooden spoons by the stove.',
+    clay: 'Stoneware',
+    glaze: 'Oxblood, wax-resist line',
+    price: '$78',
+    status: 'sold out',
+    art: 'spline',
+  },
+]
+
+/** The making process — a numbered timeline, not marketing pillars. */
+export interface Step {
+  no: string
   title: string
   body: string
 }
 
-export const TECH_PILLARS: TechPillar[] = [
+export const PROCESS: Step[] = [
   {
-    name: 'Photon',
-    title: 'Dynamic global illumination',
-    body: 'Fully dynamic GI with no baked lighting, built for scenes that restructure themselves at runtime. When a district in Neon Requiem changes hands, the light follows in the same frame.',
+    no: '01',
+    title: 'We mix our own clay',
+    body: 'Stoneware and a porcelain blend, wedged by hand in the morning before the studio warms up. Reclaim from the week goes back into the bucket — almost nothing gets thrown out.',
   },
   {
-    name: 'Lattice',
-    title: 'Deterministic rollback netcode',
-    body: 'One simulation core runs every title at a fixed 128 Hz tick — the same code paths for a 12-car grid at 300 km/h and a four-player crew spread across three continents.',
+    no: '02',
+    title: 'Thrown on two old wheels',
+    body: 'One kick wheel, one electric from 1978 that we refuse to replace. Everything you see was centred, opened and pulled up by hand. Trimming happens the next day, when the pot is leather-hard.',
   },
   {
-    name: 'Strata',
-    title: 'Procedural streaming worlds',
-    body: 'Tracks, cities and ships generate from small seeds and stream in place. No loading screens anywhere, and a full level fits inside a save file.',
+    no: '03',
+    title: 'Glazed in small batches',
+    body: 'We mix glaze in five-litre buckets and write the recipe on the lid in marker. Colours shift batch to batch, which is the point. If you want an exact match, order the set together.',
+  },
+  {
+    no: '04',
+    title: 'One firing a week',
+    body: 'A gas kiln out back, fired to cone 10 on Fridays. Reduction firing is why the oxblood goes deep red and the cream breaks warm. We unload Sunday morning with coffee. Some pieces crack. Those go in the garden.',
   },
 ]
 
-export interface Role {
-  title: string
-  team: string
-  type: string
+/** Studio facts — a plain stats strip, real numbers a small workshop would know. */
+export interface Stat {
+  value: string
+  label: string
 }
 
-export const ROLES: Role[] = [
-  { title: 'Senior Graphics Engineer', team: 'Forge Engine', type: 'Remote' },
-  { title: 'Gameplay Engineer, Netcode', team: 'Lattice', type: 'Remote' },
-  { title: 'Technical Artist', team: 'Neon Requiem', type: 'Remote / Hybrid' },
-  { title: 'Narrative Designer', team: 'Universe', type: 'Remote' },
+export const STATS: Stat[] = [
+  { value: '2', label: 'people' },
+  { value: '1', label: 'firing a week' },
+  { value: '~40', label: 'pots a month' },
+  { value: '9 yrs', label: 'at this bench' },
 ]
+
+/** Customer notes — short, specific, the kind you'd actually pin to the wall. */
+export interface Note {
+  body: string
+  who: string
+  where: string
+}
+
+export const NOTES: Note[] = [
+  {
+    body: "The mug chipped after a year of daily use and they replaced it without me even asking for a discount. The handle is the only one my partner won't fight me for.",
+    who: 'Dana R.',
+    where: 'repeat buyer',
+  },
+  {
+    body: 'Bought the stacking set as a wedding gift and ended up ordering a second one for myself. They take up no room and we use them every single day.',
+    who: 'Marcus L.',
+    where: 'kept one for himself',
+  },
+  {
+    body: 'I asked a lot of annoying questions about whether the glaze was food-safe and they answered all of them properly instead of just saying yes. It is, for the record.',
+    who: 'Priya N.',
+    where: 'first order',
+  },
+  {
+    body: "The jug arrived wrapped in newspaper from their town. I don't know why that mattered to me but it did.",
+    who: 'Tom B.',
+    where: 'three orders in',
+  },
+]
+
+/** A small note for the visit / contact section. */
+export const VISIT = {
+  line1: 'The studio is in the back of an old dairy off Mill Lane.',
+  line2: 'Open Saturdays, 10 to 4, or by appointment. Knock loudly — the wheel is noisy.',
+  email: 'hello@kilnandclay.studio',
+  phone: '01-555-0142',
+}

@@ -45,20 +45,19 @@ import {
   type SurfaceMaterial,
   type InstanceLayout,
 } from '@o3s/lib'
-import type { Difficulty, Family, GalleryEntry } from './registry'
+import type { Family, GalleryEntry } from './registry'
 
 /* AUTO-GENERATED effect entries (workflow-authored). Each surface uses the
    material's own controls; layouts get a count + the standalone components get
    a shared color/speed control set. Hand-tune individual entries as needed. */
 
 /** Surface material -> entry. Mirrors registry.tsx's surfaceEntry(). */
-function surface(material: SurfaceMaterial, difficulty: Difficulty, description: string): GalleryEntry {
+function surface(material: SurfaceMaterial, description: string): GalleryEntry {
   return {
     id: material.id,
     name: material.name,
     family: 'InteractiveSurface',
     category: 'effects',
-    difficulty,
     description,
     controls: material.controls ?? {},
     render: (v) => <InteractiveSurface material={material} params={v} />,
@@ -89,7 +88,6 @@ function grid(
     name,
     family: 'InstancedGrid',
     category: 'objects',
-    difficulty: 'medium',
     description,
     controls: {
       ...(hasCount ? { count: { value: 800, min: 100, max: 5000, step: 100 } } : {}),
@@ -138,7 +136,6 @@ function standalone(
     name,
     family,
     category,
-    difficulty: 'medium',
     description,
     controls: { color: '#5fa8ff', speed: { value: 1, min: 0, max: 4, step: 0.1 } },
     render: (v) => <Component {...(v as { color?: string; speed?: number })} />,
@@ -148,24 +145,24 @@ function standalone(
 }
 
 export const generatedEntries: GalleryEntry[] = [
-  surface(frostedGlass, 'easy', 'Heavy frosted-glass blur with fake refraction wobble.'),
-  surface(holographicFoil, 'easy', 'Rainbow foil sheen with a sharp specular streak.'),
-  surface(toonCel, 'easy', 'Cel-shaded quantized lighting with a fresnel outline rim.'),
-  surface(wireframeMorph, 'easy', 'Grid lines morphing to solid fill over time/scroll.'),
-  surface(moire, 'medium', 'Two rotated line gratings producing moire interference.'),
-  surface(fractalZoom, 'medium', 'Animated escape-time fractal coloring; cursor pans.'),
-  surface(liquidBlob, 'medium', 'Metaball blobs via smooth-min distance fields.'),
-  surface(brushedMetal, 'easy', 'Anisotropic brushed-metal highlight streaks.'),
-  surface(neonLineArt, 'easy', 'Emissive glowing line-art grid that pulses.'),
-  surface(bioluminescent, 'easy', 'Dark surface with glowing organic cells that breathe.'),
-  surface(xrayGhost, 'easy', 'Fresnel translucent edge-glow ghostly shading.'),
-  surface(rainStreaks, 'easy', 'Vertical rain streaks with droplets running down glass.'),
-  surface(scanlines, 'easy', 'CRT scanlines with chromatic offset and flicker.'),
-  surface(dither8bit, 'easy', 'Ordered-dither posterized retro shading.'),
-  surface(kineticType, 'easy', 'Distortion field warping a procedural stripe pattern.'),
-  surface(plasma, 'easy', 'Classic demoscene plasma via summed sines.'),
-  surface(voronoiCells, 'medium', 'Animated voronoi cells lit near the cursor.'),
-  surface(heatHaze, 'medium', 'Refractive heat-shimmer over a gradient backdrop.'),
+  surface(frostedGlass, 'Heavy frosted-glass blur with fake refraction wobble.'),
+  surface(holographicFoil, 'Rainbow foil sheen with a sharp specular streak.'),
+  surface(toonCel, 'Cel-shaded quantized lighting with a fresnel outline rim.'),
+  surface(wireframeMorph, 'Grid lines morphing to solid fill over time/scroll.'),
+  surface(moire, 'Two rotated line gratings producing moire interference.'),
+  surface(fractalZoom, 'Animated escape-time fractal coloring; cursor pans.'),
+  surface(liquidBlob, 'Metaball blobs via smooth-min distance fields.'),
+  surface(brushedMetal, 'Anisotropic brushed-metal highlight streaks.'),
+  surface(neonLineArt, 'Emissive glowing line-art grid that pulses.'),
+  surface(bioluminescent, 'Dark surface with glowing organic cells that breathe.'),
+  surface(xrayGhost, 'Fresnel translucent edge-glow ghostly shading.'),
+  surface(rainStreaks, 'Vertical rain streaks with droplets running down glass.'),
+  surface(scanlines, 'CRT scanlines with chromatic offset and flicker.'),
+  surface(dither8bit, 'Ordered-dither posterized retro shading.'),
+  surface(kineticType, 'Distortion field warping a procedural stripe pattern.'),
+  surface(plasma, 'Classic demoscene plasma via summed sines.'),
+  surface(voronoiCells, 'Animated voronoi cells lit near the cursor.'),
+  surface(heatHaze, 'Refractive heat-shimmer over a gradient backdrop.'),
 
   grid('tunnel-grid', 'Infinite Tunnel', 'Receding rings forming a tunnel scrolling toward camera.',
     'tunnelLayout', (count) => tunnelLayout({ count })),
